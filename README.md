@@ -10,7 +10,7 @@ Conservar en el repositorio, sin reescritura ni conversión:
 - **data/original/2026_Ejercicio.pdf**: enunciado contractual.
 - **data/original/2026_Datos.xlsm**: plantilla con la macro VBA cinterpol y todos los datos.
 
-**Importante:** los dos originales binarios están pendientes de incorporarse a GitHub. El agente debe detenerse antes de la resolución si falta alguno. docs/ENUNCIADO.md es una transcripción de consulta, no una sustitución del PDF.
+**Integridad:** ambos originales binarios están incorporados en `data/original/`, sin conversiones. Verificar su SHA-256 con `data/original/SHA256SUMS` antes de utilizarlos. docs/ENUNCIADO.md es una transcripción de consulta, no una sustitución del PDF.
 
 ## Protocolo de trabajo
 1. Auditar archivos de origen, rangos, convenciones y ambigüedades del payoff.

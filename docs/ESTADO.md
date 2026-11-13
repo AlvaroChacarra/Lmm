@@ -13,7 +13,7 @@
 - Correlaciones: matriz para **20** plazos y componentes principales precomputadas.
 - Fracción de varianza explicada acumulada en 3 componentes en la plantilla: **0.9235035014404246** (dato de la hoja; comprobar de nuevo al cargar).
 - En Curva y volas figura **shift = 0.03**, **DT(años) = 0.5** y volatilidades por periodo. Confirmar la utilización correcta de DT y de ACT/365.
-- **Los dos binarios originales están pendientes de subir a data/original/**. No iniciar cómputo hasta encontrarlos en el checkout.
+- **Los dos binarios originales están versionados en `data/original/`.** Sus SHA-256 coinciden con `SHA256SUMS`. Antes del cálculo, verificar que siguen íntegros en el checkout.
 
 ## Entregables
 | Entregable | Estado |
