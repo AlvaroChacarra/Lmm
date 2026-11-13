@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Temporary and generated outputs
+.DS_Store
+~$*
+*.tmp
+*.log
+.pytest_cache/
+build/
+dist/
+outputs/tmp/
+scratch/
+.ipynb_checkpoints/
+
+# Original source files and final deliverables are intentionally NOT ignored.
