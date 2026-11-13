@@ -1,19 +1,43 @@
-# Prompts de inicio para Codex
+# Codex — instrucciones listas para copiar
 
-## 1. Primera ejecución — Auditoría (recomendada)
-Lee AGENTS.md, docs/ESTADO.md, docs/ENUNCIADO.md y los dos archivos originales de data/original. Comprueba antes sus checksums frente a SHA256SUMS. Ejecuta **únicamente la Fase 0**: mapa exhaustivo de inputs/hojas/celdas/macros, calendario, 200 paths, 3 factores PCA, definición contractual del Snowblade y controversias interpretativas. Genera docs/AUDITORIA_INPUTS.md, actualiza ESTADO.md y DECISIONES.md. No valores todavía el instrumento ni fabriques supuestos. Haz un commit y dame un resumen ejecutivo de los riesgos materiales y el siguiente paso.
+El repositorio ya contiene los originales PDF y XLSM. Se trabaja por fases separadas para reducir errores y mantener bajo control el contexto.
 
-## 2. Primera valoración cuantitativa
-Con la auditoría revisada, implementa Fase 1 de AGENTS.md: motor Python LMM bajo medida terminal y shifted lognormal, con aleatorios y componentes principales **exactamente** del Excel. Construye tests mínimos de curva, mapeo de shocks, numerario, payoff y autocall. Produce precio provisional, desglose, tabla autocall y error MC. Actualiza documentación y haz commit. Si hay ambigüedades contractuales relevantes, cuantifica escenarios alternativos antes de fijar un precio único.
+## Prompt 1 — Auditoría inicial (PRIMERA EJECUCIÓN)
 
-## 3. Validación independiente
-Audita los cálculos a fondo sin asumir que el código es correcto. Verifica drift, índices, medidas, ACT/365, correlaciones PCA, cashflows, stop event y amortización. Ejecuta tests y documenta evidencias reales, anomalías, sensibilidad y límites. No pases a entrega si hay fallos críticos.
+> Estamos resolviendo el ejercicio AFI Snowblade / LMM de este repositorio.
+>
+> **Lee primero `AGENTS.md`, `docs/ESTADO.md`, `docs/DECISIONES.md` y el enunciado PDF original. Examina `2026_Datos.xlsm` sin modificarlo.**
+>
+> Ejecuta **únicamente la Fase 0 de AGENTS.md**. Quiero una auditoría técnica ejecutable y orientada a despejar riesgos antes de valorar:
+>
+> 1. Confirma integridad de ambos originales con `sha256sum -c data/original/SHA256SUMS`; lista hojas, rangos, formatos, fórmulas, valores, macros y anomalías relevantes del XLSM. Si necesitas extraer VBA, hazlo sin ejecutarlo.
+> 2. Localiza y documenta las entradas precisas (hoja, rango, índice, unidad): curva, plazos, day count, volatilidades, shifted rate, correlación, PCA, 200 trayectorias y convención de los shocks. No asumir dimensiones ni signos porque estén sugeridos en documentación previa: comprobarlos.
+> 3. Reconstruye calendario de fijación/devengo/pago de los 20 periodos, forwards iniciales, medida del bono terminal y la dinámica shifted-LMM con drift correcto. Deja señalados los posibles errores de índices y el encaje de PCA.
+> 4. Formaliza de manera matemática el cupón recursivo, la cancelación automática y la amortización. Destaca cualquier ambigüedad contractual material: especialmente «intereses anuales acumulados del 4%», su cálculo con ACT/365, cupones negativos y si el cupón se paga en el autocall. Propón una convención principal justificada y, cuando proceda, escenarios alternativos.
+> 5. Crea `docs/AUDITORIA_INPUTS.md` con tabla de mapeo de celdas, cronología, fórmulas y riesgos; actualiza `docs/DECISIONES.md` y `docs/ESTADO.md`. Registra lo **verificado**, **inferido** y **no resuelto** por separado.
+>
+> **Límites:** no implementes aún el motor Monte Carlo ni prepares la entrega. No regeneres los aleatorios, no recalcules PCA para reemplazar la plantilla ni modifiques el XLSM. No inventes cifras o pruebas. Usa scripts pequeños de inspección solo si aportan evidencia.
+>
+> **Cierre:** ejecuta las verificaciones posibles, haz commit en una rama de trabajo y, si el entorno lo permite, abre PR sin hacer merge automático. Responde con: (a) mapa breve de datos; (b) 3-5 riesgos materiales; (c) hipótesis recomendadas; (d) verificaciones superadas/fallidas; (e) propuesta concreta para Fase 1. No hagas preguntas salvo bloqueos reales.
 
-## 4. Explicación y defensa
-Produce una explicación progresiva, con ejemplos pequeños, de cada paso matemático y cuantitativo. Conecta la derivación del modelo con el código y la valoración. Señala decisiones defensables y preguntas probables del corrector; no conviertas esto aún en una memoria final.
+## Prompt 2 — Primera valoración rápida
 
-## 5. Excel + PDF
-Con el modelo validado, crea un Excel auditable y una memoria PDF de estilo académico humano, sin inflación de texto. Todos los precios, convenciones, fórmulas y fechas deben reconciliarse con Python. Conserva los originales intactos; actualiza docs/ESTADO.md y entrega archivos finales en entrega/.
+> Continúa desde `AGENTS.md`, `docs/ESTADO.md`, `docs/AUDITORIA_INPUTS.md` y `docs/DECISIONES.md`. Ejecuta la **Fase 1**: motor Python de valoración LMM shifted-lognormal bajo numerario terminal, utilizando los factores PCA y exactamente los 200 caminos aleatorios originales. Conecta cada input a hoja/celda y cada output a una fórmula trazable.
+>
+> Prioriza una primera respuesta cuantitativa **provisional**: precio por 100 nominal, cupones/principal, distribución de cancelación y error estándar/IC condicionado al conjunto de caminos. Incluye tests de invariantes del descuento, escenarios deterministas y cashflows. Si hay ambigüedades relevantes, calcula el precio bajo varias interpretaciones, sin ocultarlas ni seleccionar arbitrariamente una. Registra comandos, resultados y anomalías; deja el código reproducible. No prepares todavía Excel final ni PDF.
 
-## Reglas de contexto
-Al abrir un chat nuevo, escribe: «Lee AGENTS.md y docs/ESTADO.md, inspecciona el repo y continúa desde la fase pendiente; no repitas tareas concluidas ni vuelvas a decidir cuestiones cerradas».
+## Prompt 3 — Validación independiente
+
+> Relee `AGENTS.md` y el estado. Audita sin dar por bueno el código existente: dinámica y drift terminal, índices, calendarios, shifted lognormal, PCA, shocks y descuento del payoff. Ejecuta tests de límite y escenarios alternativos; cuantifica error MC, discretización y efecto PCA en la medida posible. Escribe evidencia y estado pass/fail en `docs/VALIDACION.md`, actualiza `docs/ESTADO.md` y propone correcciones concretas.
+
+## Prompt 4 — Preparación para defensa
+
+> Basándote exclusivamente en las decisiones y resultados ya validados, explica el ejercicio paso a paso, con intuiciones matemáticas, ejemplos pequeños y mapeo fórmula→código→resultado. Prioriza que el alumno pueda defender oralmente el procedimiento. No escribas todavía una memoria final genérica.
+
+## Prompt 5 — Entrega Excel + memoria
+
+> Tras superar la validación, prepara un Excel de entrega auditable y una memoria PDF académica, clara y concisa. Explica implementación, decisiones y análisis de resultados exigidos por el enunciado. No cambies los originales. Comprueba la reconciliación de cifras, fórmulas y convenciones entre Python, Excel y PDF. Documenta cualquier limitación y guarda los entregables en `entrega/`.
+
+## Para abrir un hilo nuevo
+
+> Lee `AGENTS.md`, `docs/ESTADO.md` y la última validación; revisa el historial reciente y continúa desde la fase pendiente sin repetir trabajo validado ni reinterpretar decisiones cerradas.
