@@ -43,11 +43,11 @@ def run():
     (ROOT/'outputs').mkdir(exist_ok=True)
     (ROOT/'outputs/resultados.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n')
     with (ROOT/'outputs/path_pv.csv').open('w') as f:
-        w=csv.writer(f);w.writerow(['path','coupon_pv','principal_pv','pv','redemption_period','life_years','autocalled'])
+        w=csv.writer(f,lineterminator="\n");w.writerow(['path','coupon_pv','principal_pv','pv','redemption_period','life_years','autocalled'])
         for p in range(len(pv)):
             w.writerow([p+1,coupon_pv[p],principal_pv[p],pv[p],cf.redemption_period[p],s.days[cf.redemption_period[p]]/365,bool(cf.call_event[p].any())])
     with (ROOT/'outputs/cashflows.csv').open('w') as f:
-        w=csv.writer(f);w.writerow(['path','period','payment','fixing','annual_coupon_rate','accrual','coupon','principal','cumulative_interest_fraction','terminal_bond','weight','pv','alive_before','autocall'])
+        w=csv.writer(f,lineterminator="\n");w.writerow(['path','period','payment','fixing','annual_coupon_rate','accrual','coupon','principal','cumulative_interest_fraction','terminal_bond','weight','pv','alive_before','autocall'])
         for p in range(len(pv)):
             for j in range(20):
                 weight=s.initial_terminal/s.terminal_bonds[p,j]
