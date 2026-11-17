@@ -39,4 +39,6 @@ Valorar por simulación Monte Carlo el instrumento del Anexo I utilizando el mod
 - Observaciones/fijaciones y pago del cupón en el periodo de autocancelación.
 - Convención exacta de fechado T_i/T_{N+1} para la simulación y el descuento.
 
-Estas no son decisiones ya adoptadas.
+Esta lista refleja solo las carencias del PDF. Las tres primeras cuestiones fueron
+resueltas posteriormente por el profesor: [aclaraciones vigentes](ACLARACIONES_PROFESOR.md).
+Las convenciones restantes están en [DECISIONES.md](DECISIONES.md).

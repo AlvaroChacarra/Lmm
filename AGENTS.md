@@ -9,11 +9,18 @@ Resolver el ejercicio AFI de valoración Monte Carlo del Snowblade bajo Libor Ma
 
 Idioma de informes y conversaciones: español; código, nombres de funciones y tests pueden estar en inglés. Redacción académica clara y natural, sin texto de relleno, afirmaciones no verificadas ni aparente seguridad ante dudas reales.
 
+## Punto de entrada vigente
+Leer `docs/ESTADO.md`, `docs/DECISIONES.md` y `docs/ACLARACIONES_PROFESOR.md`.
+Resultados, implementación y reproducción: `docs/RESULTADOS.md`; evidencia: `docs/VALIDACION.md`.
+La Fase 0 está concluida. No reabrir las condiciones confirmadas del profesor por
+ambigüedades del PDF anteriores a sus respuestas.
+
 ## Fuentes de verdad (orden)
-1. data/original/2026_Ejercicio.pdf
-2. data/original/2026_Datos.xlsm, incluidas tablas, numerario, aleatorios, PCA y referencia a cinterpol.
-3. docs/DECISIONES.md para opciones aprobadas.
-4. Código y tests ya validados.
+1. Aclaraciones del profesor documentadas en docs/ACLARACIONES_PROFESOR.md, que complementan el PDF; en su ámbito resuelven sus ambigüedades.
+2. data/original/2026_Ejercicio.pdf
+3. data/original/2026_Datos.xlsm, incluidas tablas, numerario, aleatorios, PCA y referencia a cinterpol.
+4. docs/DECISIONES.md para opciones aprobadas.
+5. Código y tests ya validados.
 
 Si faltan los originales, **no simular que están disponibles** ni fabricar cifras. docs/ENUNCIADO.md es una transcripción auxiliar. **Nunca modificar los originales**; no ejecutar VBA no revisado ni sobrescribir/convertir el XLSM (podría perder cinterpol, fórmulas y metadatos).
 
@@ -27,8 +34,8 @@ Si faltan los originales, **no simular que están disponibles** ni fabricar cifr
 - Calcular forwards iniciales coherentes con los factores de descuento interpolados, y evolucionar solo los tipos vivos.
 - Modelizar exactamente la dinámica desplazada bajo la medida del bono terminal, incluido su drift dependiente de forwards y de la correlación. Diferenciar volatilidad marginal, carga PCA y difusión correlacionada; revisar escalados sqrt(dt), shift y signos.
 - Para cada pago, valorar la **expectativa del cashflow dividido por el numerario terminal en su fecha** y multiplicar por el numerario inicial. Auditar los índices del producto de forwards (posible fuente de errores off-by-one).
-- Cupones recursivos: periodos 1 y 2 al 1%; 3 y 4 cupón anterior menos Euribor 6M; 5-8 +1%, 9-12 +1.25%, 13-16 +1.50%, 17-20 +2%, siempre menos Euribor 6M. La redacción no aclara si los porcentajes y cupones se interpretan como tasa anualizada, efectivo semestral o si existe floor: **no imponer cap/floor no indicado**.
-- Cancelación y amortización a la par al alcanzar 'intereses anuales acumulados de 4%'; no confundir trigger con cupón individual ni con simple suma sin revisar. Definir operacionalmente el test, fecha de observación, devengo y cupón del evento, **documentando alternativas si existe ambigüedad**. Si no ocurre, amortizar a la par en periodo 20.
+- Cupones recursivos: periodos 1 y 2 al 1%; 3 y 4 cupón anterior menos Euribor 6M; 5-8 +1%, 9-12 +1.25%, 13-16 +1.50%, 17-20 +2%, siempre menos Euribor 6M. El profesor confirma tasas anualizadas, ACT/365 y ausencia de floor: el inversor paga el cupón negativo y la recursión conserva ese valor. No reintroducir alternativas ya descartadas.
+- Cancelación y amortización a la par al alcanzar intereses efectivos netos acumulados del 4%, confirmado por el profesor. Aplicar devengo una sola vez; no anualizar el acumulado. El test por pago y cupón completo sin recorte del exceso siguen como convenciones adoptadas, documentadas en DECISIONES.md. Si no ocurre, amortizar a la par en periodo 20.
 - El enunciado no establece por sí solo todas las convenciones necesarias. **No ocultar ambigüedades**: realizar escenarios interpretativos cuando cambien resultados y recomendar una interpretación justificada. Registrar la elegida en DECISIONES.md.
 
 ## Fases y puntos de parada
@@ -68,3 +75,8 @@ Si faltan los originales, **no simular que están disponibles** ni fabricar cifr
 - No usar 'sin cambios' o 'comprobado' sin evidencias. No solicitar al usuario múltiples confirmaciones triviales; proponer opciones, cuantificar diferencias y señalar únicamente decisiones materialmente ambiguas.
 - Preferir numpy/scipy y tests a soluciones Excel excesivamente complejas. Excel es el artefacto auditable exigido, no el lugar donde esconder una caja negra.
 - Mantener todo en español salvo identificadores; comunicar primero resultados y problemas concretos, luego detalles.
+
+## Comprobaciones y documentación al cambiar el motor
+Ejecutar los comandos de `docs/RESULTADOS.md`; como mínimo, tests y contraste escalar.
+Actualizar decisiones, resultados, estado y validación cuando cambie una verdad documentada.
+Regenerar entregas si cambian cifras; no afirmar recálculo Excel sin ejecutarlo.
