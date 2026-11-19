@@ -40,7 +40,24 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(str(s.dates[21].date()),'2032-07-26')
         self.assertEqual(s.delta[0],181/365)
         np.testing.assert_allclose(1/np.cumprod(1+s.delta*s.f0),s.p0[1:],atol=1e-14)
-        np.testing.assert_array_equal(s.diffusion[1:],self.data.loadings*self.data.vols[1:,None])
+        np.testing.assert_array_equal(s.diffusion[1:],self.data.loadings*self.data.vols[:20,None])
+
+    def test_professor_spot_first_forward_and_unused_vol(self):
+        s=self.s
+        self.assertEqual(s.config.diffusion_clock,'template')
+        self.assertEqual(s.config.vol_offset,0)
+        np.testing.assert_array_equal(s.diffusion[0],np.zeros(3))
+        np.testing.assert_array_equal(s.diffusion[1],self.data.vols[0]*self.data.loadings[0])
+        np.testing.assert_array_equal(s.diffusion[20],self.data.vols[19]*self.data.loadings[19])
+        vols=self.data.vols.copy();vols[20]*=2  # Solo fixture en memoria, original intacto.
+        np.testing.assert_array_equal(simulate(replace(self.data,vols=vols)).states,s.states)
+
+    def test_diffusion_clock_does_not_change_ACT365_coupon_accrual(self):
+        alternate=simulate(self.data,replace(Config(),diffusion_clock='act365'))
+        np.testing.assert_array_equal(alternate.delta,self.s.delta)
+        np.testing.assert_array_equal(alternate.fixings[:,:1],self.s.fixings[:,:1])
+        self.assertEqual(self.s.delta[0],181/365)
+        self.assertFalse(np.array_equal(alternate.states,self.s.states))
 
     def test_terminal_drift_shift_and_sign(self):
         s=self.s; f=np.broadcast_to(s.f0[1:],(2,20))
@@ -62,7 +79,7 @@ class ModelTests(unittest.TestCase):
 
     def test_last_forward_exact_log_step(self):
         # El último forward tiene drift cero; telescopa log-incrementos exactos.
-        s=self.s;lam=s.diffusion[-1];h=s.delta[:20]
+        s=self.s;lam=s.diffusion[-1];h=np.full(20,.5)
         exponent=np.sum(np.sqrt(h)[:,None]*(self.data.normals.transpose(1,2,0)@lam)-.5*np.dot(lam,lam)*h[:,None],axis=0)
         expected=(s.f0[-1]+.03)*np.exp(exponent)-.03
         np.testing.assert_allclose(s.states[20,:,-1],expected,rtol=0,atol=2e-16)
@@ -82,7 +99,7 @@ class ModelTests(unittest.TestCase):
         for n in range(21):
             self.assertTrue(np.all(self.s.states[n]+.03>0))
             self.assertTrue(np.all(1+self.s.delta*self.s.states[n]>0))
-        np.testing.assert_allclose(np.diag(self.s.diffusion[1:]@self.s.diffusion[1:].T),self.data.vols[1:]**2,rtol=1e-14)
+        np.testing.assert_allclose(np.diag(self.s.diffusion[1:]@self.s.diffusion[1:].T),self.data.vols[:20]**2,rtol=1e-14)
 
     def test_invalid_states_fail_closed(self):
         for state in [np.array([[-.031]]),np.array([[float('nan')]])]:

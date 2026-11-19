@@ -4,8 +4,8 @@ Repositorio de trabajo para resolver, validar y explicar la valoración de un **
 
 ## Solución actual
 
-**98.51983210 por 100 de nominal**, con SE Monte Carlo **2.63848960** e IC 95% aproximado
-**[93.31684526, 103.72281893]**, usando los 200 paths originales. Sin floor y con memoria
+**98.26916479 por 100 de nominal**, con SE Monte Carlo **2.74535035** e IC 95% aproximado
+**[92.85545320, 103.68287639]**, usando los 200 paths originales. Sin floor y con memoria
 negativa, objetivo de intereses efectivos del 4% y tasas anualizadas ACT/365, según
 [aclaraciones del profesor](docs/ACLARACIONES_PROFESOR.md).
 
@@ -16,7 +16,9 @@ negativa, objetivo de intereses efectivos del 4% y tasas anualizadas ACT/365, se
 
 El precio depende de convenciones residuales documentadas. El IC es orientativo con
 200 paths y cola negativa; no incluye errores de PCA, malla o interpretación residual.
-El libro nuevo contiene fórmulas y caches reconciliadas; no se ha ejecutado recálculo en Excel.
+Segunda ronda: fixing advance confirmado; difusión h=.5, primera sigma para F1 y spot
+inicial sin sigma. Cupón completo sigue como lectura de trabajo de un «Correcto» ambiguo.
+El libro nuevo se ha recalculado con LibreOffice y control centinela; Microsoft Excel no probado.
 
 ```sh
 python -m pip install -r requirements.txt
@@ -24,10 +26,11 @@ python scripts/value_snowblade.py
 PYTHONPATH=src python -m unittest discover -s tests -v
 python scripts/validate_solution.py
 python scripts/build_delivery.py
+python scripts/recalculate_delivery.py
 python scripts/check_delivery.py
 ```
 
-El PDF requiere fuentes DejaVu; las rutas están documentadas en RESULTADOS.md.
+El PDF requiere fuentes DejaVu y el recálculo requiere soffice; ver RESULTADOS.md.
 Para retomar con Codex, leer AGENTS.md y docs/ESTADO.md. No repetir fases concluidas.
 
 ## Fuentes inmutables
@@ -54,5 +57,6 @@ Para retomar con Codex, leer AGENTS.md y docs/ESTADO.md. No repetir fases conclu
 ## Hitos
 **Fase 0:** auditoría contractual y de datos → **Fase 1:** baseline reproducible Python con aleatorios originales → **Fase 2:** verificación independiente → **Fase 3:** explicación pedagógica → **Fase 4:** Excel y PDF coherentes con los resultados.
 
-**Estado actual:** motor y entregas generados; 17 tests y reconciliación escalar superados.
-Pendiente recálculo de app Excel y confirmación de convenciones residuales.
+**Estado actual:** motor y entregas generados; 19 tests y reconciliación escalar superados.
+Recálculo LibreOffice reproducible superado. Se mantiene explícita la lectura del exceso
+y los supuestos de calendario y volatilidad constante.

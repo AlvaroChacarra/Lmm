@@ -1,0 +1,26 @@
+{
+  "engine": "LibreOfficeDev 26.8.0.0.alpha0 2c87e51eeaa2b413ff4ae097b2705eea1995d8e5",
+  "source_xlsx_sha256": "e8bad3bf12165d9d93da37a173eb2c538fba760518b67fb4dd6160da865cafe0",
+  "base_config": {
+    "terminal": 21,
+    "scheme": "log_euler",
+    "diffusion_clock": "template",
+    "vol_offset": 0,
+    "vol_scale": 1.0
+  },
+  "formula_count": 195934,
+  "negative_control_preserved_sentinels": 195934,
+  "forced_remaining_sentinels": 0,
+  "forced_error_cells": [],
+  "max_formula_cache_difference": 1.5916157281026244e-12,
+  "base_price_recalculated": 98.2691647949938,
+  "zero_volatility_price": 105.35659626163304,
+  "zero_volatility_state_max_error": 8.956594146902752e-16,
+  "zero_volatility_paths_max_error": 4.973799150320701e-13,
+  "zero_volatility_error_cells": [],
+  "original_sha256": {
+    "2026_Datos.xlsm": "74d51e6531cc4b46e8cf7d2ddbe60ce930a10c0cf908942b39454d557c7ec0bd",
+    "2026_Ejercicio.pdf": "5bd06ea075689c9086eda2ac698b40d2f5a2a7079367bcfac824bd90bf875b76"
+  },
+  "microsoft_excel_tested": false
+}
