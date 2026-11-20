@@ -1,63 +1,77 @@
-# LMM — AFI | Valoración Monte Carlo de un Snowblade
+# Snowblade — solución LMM del ejercicio AFI
 
-Repositorio de trabajo para resolver, validar y explicar la valoración de un **Snowblade a 10 años** bajo **Libor Market Model (LMM)**, en esquema monocurva, cotización **shifted lognormal** y numerario bono terminal \(T_{N+1}\).
+Valoración Monte Carlo bajo LMM shifted lognormal monocurva y bono terminal, con los
+**200 paths originales**. El contrato está aclarado por el profesor y el caso final
+está validado para el ejercicio académico.
 
-## Solución actual
+**Resultado: 98,26916479 por 100 de nominal.** Error estándar 2,74535035; IC 95%
+aproximado [92,85545320; 103,68287639]. La precisión está limitada por la muestra y
+las aproximaciones del modelo. [Resultados y lectura económica](docs/RESULTADOS.md).
 
-**98.26916479 por 100 de nominal**, con SE Monte Carlo **2.74535035** e IC 95% aproximado
-**[92.85545320, 103.68287639]**, usando los 200 paths originales. Sin floor y con memoria
-negativa, objetivo de intereses efectivos del 4% y tasas anualizadas ACT/365, según
-[aclaraciones del profesor](docs/ACLARACIONES_PROFESOR.md).
+[Excel con implementación](entrega/Snowblade_LMM.xlsx) ·
+[Memoria PDF](entrega/Memoria_Snowblade.pdf)
 
-- [Resultados y límites](docs/RESULTADOS.md), [estado](docs/ESTADO.md),
-  [decisiones](docs/DECISIONES.md) y [validación](docs/VALIDACION.md).
-- [Excel con implementación](entrega/Snowblade_LMM.xlsx) y [memoria PDF](entrega/Memoria_Snowblade.pdf).
-- [Auditoría inicial](docs/AUDITORIA_INPUTS.md), conservada como fotografía histórica.
+## Cómo entender y reconstruir la solución
 
-El precio depende de convenciones residuales documentadas. El IC es orientativo con
-200 paths y cola negativa; no incluye errores de PCA, malla o interpretación residual.
-Segunda ronda: fixing advance confirmado; difusión h=.5, primera sigma para F1 y spot
-inicial sin sigma. Confirmación final: **opción A, cupón completo sin recorte**.
-El caso base ya era correcto y el precio no cambia.
-El libro nuevo se ha recalculado con LibreOffice y control centinela; Microsoft Excel no probado.
+| Documento | Pregunta que resuelve |
+| --- | --- |
+| [Aclaraciones del profesor](docs/ACLARACIONES_PROFESOR.md) | ¿Qué información contractual se obtuvo fuera del PDF? |
+| [Mapa de inputs](docs/AUDITORIA_INPUTS.md) | ¿De qué celdas salen los datos y cómo se asignan a cada fecha? |
+| [Decisiones](docs/DECISIONES.md) | ¿Qué se eligió, por qué y qué alternativas se descartaron? |
+| [Fundamentos y reflexión](docs/FUNDAMENTOS.md) | ¿Cómo funciona la valoración y qué respalda el procedimiento seguido? |
+| [Validación](docs/VALIDACION.md) | ¿Qué se comprobó realmente y qué no demuestra cada prueba? |
+| [Estado](docs/ESTADO.md) | ¿Qué está terminado y cómo retomar sin depender del chat? |
+
+Las versiones intermedias se recuperan en Git. La documentación vigente presenta una
+sola solución: no es un archivo de prompts ni de planes ya consumidos.
+
+## Verificar el estado publicado
+
+Desde la raíz, con Python 3.12, las dependencias de [requirements.txt](requirements.txt)
+y los originales disponibles:
 
 ```sh
+python -m venv .venv
+. .venv/bin/activate
 python -m pip install -r requirements.txt
+(cd data/original && sha256sum -c SHA256SUMS)
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m unittest discover -s tests -v
+PYTHONDONTWRITEBYTECODE=1 python scripts/check_delivery.py
+```
+
+El último comando reconcilia los valores guardados del Excel y el PDF con Python y
+comprueba si existe evidencia externa de recálculo vinculada al hash del libro.
+**Leer cachés por sí solo no acredita ejecutar sus fórmulas.**
+
+## Regenerar cálculo y entregas
+
+```sh
 python scripts/value_snowblade.py
-PYTHONPATH=src python -m unittest discover -s tests -v
 python scripts/validate_solution.py
 python scripts/build_delivery.py
 python scripts/recalculate_delivery.py
 python scripts/check_delivery.py
 ```
 
-El PDF requiere fuentes DejaVu y el recálculo requiere soffice; ver RESULTADOS.md.
-Para retomar con Codex, leer AGENTS.md y docs/ESTADO.md. No repetir fases concluidas.
+Los comandos escriben únicamente resultados derivados en `outputs/` y `entrega/`.
+El PDF requiere DejaVu en `/usr/share/fonts/truetype/dejavu/`. El recálculo externo
+requiere `soffice` en PATH, o `--soffice /ruta/soffice`; trabaja con copias temporales.
+Los escenarios se regeneran desde Python: sus tablas publicadas son estáticas.
 
-## Fuentes inmutables
-- [`data/original/2026_Ejercicio.pdf`](data/original/2026_Ejercicio.pdf): enunciado contractual.
-- [`data/original/2026_Datos.xlsm`](data/original/2026_Datos.xlsm): datos, plantilla Excel, aleatorios, PCA y macro VBA `cinterpol`.
-- [`data/original/SHA256SUMS`](data/original/SHA256SUMS): verificación de integridad; ejecutar `(cd data/original && sha256sum -c SHA256SUMS)` desde la raíz.
+## Estructura y fuentes
 
-**No editar ni convertir las fuentes originales.** `docs/ENUNCIADO.md` es solo una transcripción auxiliar.
+[Enunciado original](data/original/2026_Ejercicio.pdf) ·
+[XLSM original](data/original/2026_Datos.xlsm) · [SHA-256](data/original/SHA256SUMS)
 
-## Estructura de trabajo
-| Ruta | Propósito |
-| --- | --- |
-| `AGENTS.md` | Contrato persistente, reglas matemáticas y fases para Codex |
-| `docs/CODEX_START.md` | Prompts preparados para cada fase |
-| `docs/ESTADO.md` | Punto de control para retomar en conversaciones nuevas |
-| `docs/DECISIONES.md` | Supuestos y alternativas contractuales |
-| `docs/VALIDACION.md` | Evidencias reales de tests y reconciliación |
-| `docs/ENUNCIADO.md` | Síntesis del enunciado |
-| `data/original/` | Archivos originales verificados |
-| `src/` | Código de valoración, después de la auditoría |
-| `tests/` | Tests unitarios y cuantitativos |
-| `entrega/` | Excel final y memoria PDF |
+- `data/original/`: PDF, XLSM, manifiesto SHA-256 e instrucciones de conservación.
+- `src/lmm/`: lectura, curva, simulación, payoff y estimación.
+- `tests/`: controles cuantitativos y referencia escalar separada.
+- `scripts/`: ejecución, validación, generación y comprobación de las entregas.
+- `outputs/`: resultados finales y evidencia reproducible, incluidos 200 PV y 4.000 flujos.
+- `entrega/`: XLSX nuevo sin VBA y memoria de cinco páginas.
+- `docs/`: fuentes adicionales, decisiones, método y evidencia; [AGENTS.md](AGENTS.md)
+  contiene las reglas para mantenerlos consistentes.
 
-## Hitos
-**Fase 0:** auditoría contractual y de datos → **Fase 1:** baseline reproducible Python con aleatorios originales → **Fase 2:** verificación independiente → **Fase 3:** explicación pedagógica → **Fase 4:** Excel y PDF coherentes con los resultados.
-
-**Estado actual:** motor y entregas generados; 19 tests y reconciliación escalar superados.
-Recálculo LibreOffice reproducible superado y cupón íntegro al autocall confirmado.
-Permanecen los límites MC y los supuestos mínimos de calendario y volatilidad constante.
+No modificar los originales ni sustituir aleatorios o PCA. El recálculo se ha probado
+en LibreOffice; Microsoft Excel no está probado. No hay consulta contractual material
+pendiente para la solución presentada; los supuestos mínimos y límites siguen explícitos.

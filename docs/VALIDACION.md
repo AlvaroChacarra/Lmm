@@ -1,106 +1,82 @@
-# Validación con opción A confirmada
+# Evidencia de validación y alcance
 
-**PASS para el uso académico y el caso documentado**, con precisión MC limitada:
-h=.5, sigma1 para F1, spot sin sigma y cupón íntegro al autocall confirmado por el
-profesor (opción A). No se ha cambiado el algoritmo ni el precio. Calendario sin ajuste
-y sigma constante hasta reset permanecen como supuestos mínimos explícitos.
+**PASS para el uso académico del caso documentado**, con precisión MC limitada y los
+supuestos mínimos de [DECISIONES](DECISIONES.md). Cálculo y entregas finales se validaron
+antes de esta consolidación documental; la limpieza preserva sus bytes y parámetros.
+Comandos de verificación y regeneración: [README](../README.md).
 
-El anterior commit 63a681f fue auditado por cinco agentes. Esta actualización no reclama
-una nueva auditoría multiagente: reejecuta los contrastes de la nueva configuración,
-incluido el motor real de hoja de cálculo. No se modifican los originales ni los shocks.
+## Código, contrato y estimador
 
-## Motor y referencia escalar
+**19 tests superados** cubren integridad y corrupción de fuente, interpolación, curva/
+forwards, spot y mapa sigma, separación h/delta, signo/shift del drift, último forward,
+congelación de tipos, dominio, sigma cero, payoff negativo, primer cruce, amortización
+única, estadística sobre paths completos y comparación escalar.
 
-```sh
-PYTHONPATH=src python -m unittest discover -s tests -v
-python scripts/validate_solution.py
-```
-
-**19 tests PASS.** Se conservan los 17 anteriores y se añaden dos controles materiales:
-mapa spot/F1/F20, sigma21 fuera de malla; separación entre h=.5 y devengos ACT/365.
-La fórmula cerrada del último forward con drift cero usa veinte incrementos de .5,
-no los días ACT/365. El checksum original sigue siendo obligatorio.
-
-| Comparación de los 200 paths | Máximo error absoluto |
+| Contraste actual | Máximo error absoluto |
 | --- | ---: |
-| Forwards vectorizados / escalar | 1.5404344467e-15 |
-| Cupones vectorizados / escalar | 6.2616578589e-14 |
+| Forwards vectorizados / escalar | 1,5404344467e-15 |
+| Cupones vectorizados / escalar | 6,2616578589e-14 |
 | Principal | 0 |
-| PV por path | 2.8421709430e-13 |
-| Sigma=0 / descuento directo | 7.1054273576e-14 |
+| PV por path | 2,8421709430e-13 |
+| Sigma cero / descuento directo | 7,1054273576e-14 |
 
-[outputs/validacion.json](../outputs/validacion.json) identifica la configuración y
-contiene 230 diagnósticos de bonos: máximo abs(z)=2.0263283, todos dentro de 5SE.
-Añade 60 caplets, strikes F0 y F0±1%, contra shifted-Black con expiries de difusión
-T_i=i*.5 y sigmas F9:F28: máximo abs(z)=1.8261018. Se valora el payoff conocido al reset
-mediante el cociente de bonos, sin simular números nuevos. Es contraste de calibración
-marginal para esta parametrización, no prueba de convergencia temporal ni cobertura exacta.
+[validacion.json](../outputs/validacion.json) contiene los 230 controles de ratios de
+bonos (máximo abs(z)=2,0263283) y 60 caplets contra shifted-Black (máximo abs(z)=1,8261018).
+Usan los mismos200paths originales, expiries de difusión i*.5, sigmas F9:F28 y strikes
+F_i(0)±1% y ATM. Todos quedan dentro de las tolerancias de cinco SE aplicadas. Son
+contrastes probabilísticos correlacionados, no pruebas de convergencia temporal o
+cobertura exacta del IC.
 
-La referencia escalar comparte inputs y convenciones, pero no los kernels de drift,
-payoff, interpolación o PV. Reproduce todas las trayectorias y decisiones de amortización.
-La ambigüedad de «Correcto» se cierra por fuente explícita del profesor, no por un test.
-Se ha ejecutado además el fixture de aceptación 3.80+.60: acumulado4.40, cupón.60
-y principal100 en ese pago, sin flujos posteriores. Resultado en professor_option_A del JSON.
-En los 200 paths reales no hay igualdad exacta al4%: los tests > y >= producen las
-mismas cancelaciones. La lectura de alcance del PDF sigue siendo >=.
+La referencia escalar no llama a kernels de simulación, payoff, interpolación o PV del
+motor; comparte inputs y convenciones. Por sí sola no demostraría que esas convenciones
+son las del contrato. Se complementa con límites analíticos y respuestas del profesor.
+Su ejemplo final se ha ejecutado:3,80 acumulados + 0,60 de cupón produce 100,60, intereses4,40
+y ningún flujo posterior. No hay igualdad exacta al4% en los paths originales: > y >=
+producen las mismas cancelaciones de la muestra; el test del enunciado es de alcance.
 
-## Entregas y recálculo real
+## Recálculo de las entregas
 
-```sh
-python scripts/build_delivery.py
-python scripts/recalculate_delivery.py
-python scripts/check_delivery.py
-```
+El XLSX contiene **195.934 fórmulas**. Se reconcilian 88.200 estados, 4.000 registros de
+flujos y 200 PV, además de las cifras del resumen y el PDF de cinco páginas.
 
-El nuevo XLSX contiene **195.934 fórmulas**. Incluye la hoja Volatilidades con las
-21 sigmas originales, su fuente y uso; la fila extra21 no se fuerza en el spot.
-La difusión usa Parametros!B8=.5 y los cupones Calendario!ACT365.
+El script de recálculo trabaja solo en copias temporales. Motor observado:
+LibreOfficeDev 26.8, build `2c87e51eeaa2b413ff4ae097b2705eea1995d8e5`.
 
-Relectura: 88.200 estados, 4.000 registros de flujos, 200 PV y cifras del resumen/PDF
-coinciden. PDF de cinco páginas con precios y convenciones actuales. El comprobador
-lee las cifras esperadas desde resultados actuales, sin perpetuar un precio antiguo.
+1. Sustituye todos los resultados guardados de fórmulas por un centinela.
+2. Un perfil que no recalcula los conserva: control negativo de que abrir/guardar no
+   basta para validar una hoja de cálculo.
+3. Con OOXMLRecalcMode=0 se sustituyen todos, sin celdas de error. Desvío máximo frente
+   a los valores auténticos: 1,5916157281e-12; precio 98,2691647949938.
+4. Con las sigmas a cero y cachés adulteradas, el motor calcula 105,35659626163304 y
+   amortización en periodo 5 en todos los paths, coincidiendo con la referencia.
+5. Conserva el hash del XLSX de origen y de los originales contractuales.
 
-**Recálculo efectivo en LibreOfficeDev 26.8**, reproducible con script incluido:
+El [certificado](../outputs/recalculo_validacion.json) se liga al hash del libro:
+[check_delivery.py](../scripts/check_delivery.py) no acepta como vigente un certificado
+de otro XLSX. **Microsoft Excel no probado.** Estas pruebas no convierten las tablas
+estáticas de escenarios en una aplicación general de valoración.
 
-1. Se adulteran los caches de las 195.934 fórmulas en una copia temporal.
-2. Perfil de no recálculo conserva todos los centinelas (control negativo).
-3. Perfil OOXMLRecalcMode=0 sustituye todos: cero centinelas y cero errores.
-   Máxima diferencia frente a caches auténticos: **1.5916157281e-12**.
-   Precio recalculado **98.2691647949938**.
-4. Otra copia con las 21 sigmas puestas a cero se recalcula a **105.35659626163304**,
-   con todos los paths amortizando en5. Estados difieren de la referencia como máximo
-   8.96e-16 y componentes de PV como máximo 4.98e-13.
-5. El original XLSX y las fuentes conservan sus hashes. El script no ejecuta macros
-   ni sobrescribe la entrega; verifica el SHA del libro y del PDF contractual.
+## Auditoría aislada y lecciones conservadas
 
-Evidencia: [recalculo_validacion.json](../outputs/recalculo_validacion.json), vinculada
-al hash del XLSX. `check_delivery.py` solo marca recálculo externo válido si ese hash
-coincide; no acepta un certificado de una versión anterior. **Microsoft Excel no probado.**
-La prueba no convierte las tablas estáticas de sensibilidades en una aplicación de escenarios.
+Cinco agentes nuevos revisaron aisladamente contrato/inputs, matemáticas, código/
+estadística, Excel/PDF y una reconstrucción ciega del commit 63a681f, antes de recibir
+las correcciones finales de sigma/reloj. Después contrastaron sus discrepancias.
+No identificaron un bug material del caso entonces documentado; reprodujeron su precio
+condicional y señalaron el efecto contractual del fixing pendiente de confirmación.
 
-Dos ejecuciones de valor, validación y generación producen los mismos resultados de
-precio y archivos numéricos. Se verifica SHA de JSON/CSV al cierre. Los SHA-256 de PDF/XLSM
-originales coinciden con SHA256SUMS; git diff de data/original está vacío.
+Aquella auditoría no certifica automáticamente parámetros posteriores ni sustituye
+al profesor. La configuración final se verificó después con los19tests, referencia
+escalar, caplets y recálculo externo actuales. Las respuestas cerraron advance y
+opción A; se conservaron sus citas y consecuencias, no informes intermedios con dudas
+ya resueltas. [Fundamentos y reflexión](FUNDAMENTOS.md) explica esta separación de pruebas.
 
-## Reconciliación y límites
+## Reproducibilidad y límites
 
-Anterior: 98.51983209787186. Nuevo: 98.26916479499383. Diferencia sobre paths comunes
--0.2506673028780, SE pareado .1281646202970. Se corrigen conjuntamente reloj y mapa;
-la no linealidad del primer cruce impide sumar efectos de escenarios con bases diferentes.
+Mismos originales, versión, configuración y200paths producen los mismos JSON/CSV
+numéricos. La confirmación de opción A no alteró ni los 200PV ni los 4.000flujos de
+b5b6b95. Los SHA-256 de originales y del XLSX actual están en la evidencia citada.
 
-La libertad de numerario indicada por el profesor significa invariancia teórica con
-cambio consistente de medida/drift/descuento, no igualdad de dos estimadores finitos.
-El terminal T20 alternativo da 98.1855226344 con los mismos números; no prueba fallo.
-
-El precio actual tiene SE2.74535035 e IC aproximado [92.85545320,103.68287639], con
-cola negativa y solo200paths. No incluye incertidumbre contractual, PCA o discretización.
-La calibración externa de mercado, p-code/VBA y convergencia Browniana no se han auditado.
-No se ha generado ni sustituido ninguna normal o componente principal.
-
-## Cierre de la confirmación final
-
-El objeto base de resultados.json coincide exactamente con el de b5b6b95. Los SHA-256
-de los CSV de los200PV y los4.000flujos también coinciden, comprobados antes/después.
-La opción A no exige recalcular con otro payoff: era el utilizado. Se regeneran las
-entregas para retirar la advertencia contractual ya resuelta y se verifica su recálculo.
-El escenario de recorte permanece solo como contrafactual expresamente descartado.
+No se afirma independencia demostrada del generador pegado en Excel, precisión de
+céntimos, calibración con precios externos, convergencia Browniana, ejecución de VBA
+ni auditoría de su p-code. Los límites de muestra, PCA y esquema permanecen explícitos.
+La limpieza de documentación no es una nueva auditoría económica ni aumenta el n de MC.
