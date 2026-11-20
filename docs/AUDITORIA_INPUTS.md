@@ -4,6 +4,8 @@
 > objetivo se resolvieron después: ver [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
 > El estado y la solución vigentes están en [RESULTADOS.md](RESULTADOS.md). Las
 > recomendaciones de este documento reflejan la evidencia disponible antes de las respuestas.
+> La segunda ronda sustituye especialmente el mapa de volatilidades (primera sigma para F1,
+> sin sigma para el spot) y el reloj de difusión (h=.5). No usar este mapa histórico como base vigente.
 
 Fecha: 2026-11-13. Baseline: `15359f2` (main al clonar). Modo **standard**.
 Veredicto: **PASS WITH CONDITIONS** para comenzar una valoración provisional por escenarios;

@@ -1,5 +1,6 @@
 """Lee Excel/PDF de entrega y reconcilia cachés; no sustituye recálculo en Excel."""
 import json
+from hashlib import sha256
 import sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -33,11 +34,20 @@ f.close()
 pdf=PdfReader(ROOT/'entrega/Memoria_Snowblade.pdf')
 text='\n'.join(p.extract_text() for p in pdf.pages)
 assert len(pdf.pages)==5
-assert all(value in text for value in ['98,5198','2,6385','93,3168','103,7228'])
+def spanish(x):return f'{x:.4f}'.replace('.',',')
+assert all(spanish(value) in text for value in [r['price'],r['standard_error'],*r['ci95_student']])
+assert 'h=0,5' in text
 assert 'cupones negativos' in text
+assert 'confirma expresamente la opción A' in text
+assert 'como lectura de trabajo' not in text
+assert r['cap_target'] is False
+recalc_file=ROOT/'outputs/recalculo_validacion.json'
+recalc=json.loads(recalc_file.read_text()) if recalc_file.exists() else {}
+recalc_matches=recalc.get('source_xlsx_sha256')==sha256((ROOT/'entrega/Snowblade_LMM.xlsx').read_bytes()).hexdigest()
 report={'excel_state_values_checked':actual.size,'excel_flow_rows_checked':len(flows),
         'excel_paths_checked':len(path_values),'excel_formula_count':count,'excel_cached_error_cells':error_cells,
-        'excel_engine_recalculation':'NOT_EXECUTED','pdf_pages':len(pdf.pages),'pdf_key_figures_match':True,
+        'excel_engine_recalculation':'LIBREOFFICE_VALIDATED_SEPARATELY' if recalc_matches else 'NOT_EXECUTED',
+        'external_recalc_evidence':'outputs/recalculo_validacion.json' if recalc_matches else None,'pdf_pages':len(pdf.pages),'pdf_key_figures_match':True,
         'original_sha256':verify_originals()}
 (ROOT/'outputs/entrega_validacion.json').write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

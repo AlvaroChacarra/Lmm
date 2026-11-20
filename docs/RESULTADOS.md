@@ -1,104 +1,129 @@
-# Solución numérica del Snowblade
+# Solución del Snowblade con opción A confirmada
 
-**Precio estimado: 98.51983210 por 100 de nominal.** Caso base con las tres condiciones
-confirmadas por el profesor, 200 paths originales y convenciones residuales explícitas.
-No es una valoración con precisión de céntimos: SE=2.63848960.
+**Precio estimado: 98.2691647950 por 100.** Se usa fixing advance, h=.5 y
+primera sigma para el primer forward futuro, conservando los 200 paths originales.
+La respuesta final del profesor confirma **opción A: cupón completo sin recorte**
+y principal en la liquidación del evento. El caso base ya lo implementaba: precio y
+trayectorias de PV no cambian respecto a b5b6b95.
 
-## Resultado base
+## Resultado actual
 
 | Magnitud | Valor |
 | --- | ---: |
-| Precio | 98.5198320979 |
-| PV cupones | -1.9627063651 |
-| PV principal | 100.4825384630 |
-| Error estándar, 200 PV completos | 2.6384896011 |
-| IC 95% aproximado Student (199 g.l.) | [93.3168452620, 103.7228189337] |
-| Vida media bajo medida terminal | 3.3826438356 años |
-| Autocancelan | 185 / 200 (92.5%) |
-| Vencen sin autocall | 15 / 200 (7.5%) |
-| Paths con algún cupón pagado negativo | 29 / 200 |
+| Precio | 98.2691647950 |
+| PV cupones | -2.2533577743 |
+| PV principal | 100.5225225693 |
+| SE sobre 200 PV completos | 2.7453503522 |
+| IC 95% Student aproximado | [92.8554532016, 103.6828763883] |
+| Vida media Q terminal | 3.3801643836 años |
+| Autocalls / vencimientos sin autocall | 185 / 15 |
+| Paths con cupón negativo / PV negativo | 29 / 5 |
 | Cupones pagados negativos | 276 |
-| Paths con PV neto negativo | 4 / 200 |
-| Mínimo / máximo PV de trayectoria | -292.7628494254 / 139.7480358069 |
-| Mediana PV de trayectoria | 103.5984172196 |
+| PV mínimo / máximo | -310.6175641748 / 138.8841210483 |
+| Mediana del PV | 103.9453260046 |
 
-El PV del principal supera 100 por la estructura inicial de descuentos y la devolución
-frecuentemente temprana; devolución a la par no significa PV igual a 100. Los cupones
-netos tienen PV negativo por la cola de escenarios supervivientes con tipos altos.
-Los pagos negativos pueden superar el principal: el contrato no establece floor ni
-límite de responsabilidad del inversor. No se han excluido ni winsorizado escenarios.
-La trayectoria 71 es la peor; omitirla llevaría la media a 100.48607673. Esa cifra se
-registra solo como influencia muestral, **no como una estimación admisible**.
+El peor path sigue siendo el 71. Omitirlo daría 100.3238719757:
+solo diagnóstico de influencia, nunca un precio alternativo admisible. La cola es parte
+del contrato sin floor; devolver el principal no limita los pagos negativos de cupones.
+La media y el SE están correctamente calculados, pero n=200 y la asimetría limitan la
+cobertura real del IC. No incluye riesgo de PCA, parametrización ni discretización.
+Probabilidades y vida media corresponden a Q terminal, no a pronósticos físicos.
 
-El IC supone columnas independientes y una aproximación de la distribución de la media.
-La cola muy asimétrica y n=200 limitan su cobertura real. No incluye incertidumbre por
-calendario, sigma, discretización ni aproximación PCA. No se generan shocks adicionales.
+## Interpretación operativa de las respuestas
 
-## Autocall por fecha bajo Q terminal
+Detalle y citas en [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
+
+- **Spot:** índice 0, intervalo inicial conocido [t0,t1], sin difusión y sin sigma.
+- **Forward F_i, i=1…20:** intervalo [t_i,t_(i+1)]; PCA fila 116+i; sigma de
+  Curva y volas!F(8+i), es decir F9:F28. La fila F29 se conserva como extra no utilizada.
+- **Cupones:** tasas anualizadas; devengo delta_(j−1)=días(t_j−t_(j−1))/365;
+  r_j=F_(j−1)(t_(j−1)), con primeros dos cupones fijos.
+- **Dinámica:** h=.5 para drift, término de Itô y shock sqrt(h), según partición 30/360.
+  No se cambia delta a .5 ni se transforma ACT/365 del cupón a 30/360.
+- **Numerario:** P(t,t21), con t20=26/01/2032 último pago y t21=26/07/2032 auxiliar.
+  El profesor admite elegir otro bono terminal: hay que cambiar medida/drift/descuento
+  coherentemente. No exige precios idénticos con una realización finita de 200 paths.
+- **Exceso:** opción A confirmada expresamente; cupón íntegro y devolución del nominal.
+  Ejemplo con100 de nominal y3.80 acumulados: siguiente cupón .60 implica pago100.60
+  e intereses finales4.40. La implementación ya daba ese resultado.
+- **Supuestos que se mantienen:** aniversarios desde C2 sin ajuste hábil ni lag;
+  sigma constante hasta reset. No se atribuye al profesor una respuesta que no dio.
+
+## Reconciliación con la valoración anterior
+
+| Caso | Precio |
+| --- | ---: |
+| Anterior: ACT/365 en difusión, sigma1 asignada al spot sin uso | 98.5198320979 |
+| Nuevo: h=.5, sigma1 asignada a F1 | 98.2691647950 |
+| Diferencia nueva − anterior | -0.2506673029 |
+| SE de esa diferencia pareada | 0.1281646203 |
+
+Se cambian ambos parámetros según las respuestas; el efecto conjunto no debe inferirse
+sumando diferencias de escenarios con otra base, porque puede cambiar el primer cruce.
+La configuración anterior sigue siendo reproducible con
+`Config(diffusion_clock='act365', vol_offset=1)`; ya no es el caso vigente.
+
+## Controles y sensibilidades actuales
+
+| Escenario | Precio | Delta base | SE pareado |
+| --- | ---: | ---: | ---: |
+| predictor_corrector | 98.3074505558 | +0.0382857608 | 0.0119943601 |
+| act365_diffusion_counterfactual | 98.2909499837 | +0.0217851887 | 0.0146460702 |
+| terminal_10_years | 98.1855226344 | -0.0836421606 | 0.0606962270 |
+| second_vol_row_counterfactual | 98.5293632017 | +0.2601984067 | 0.1299007896 |
+| zero_volatility | 105.3565962616 | +7.0874314666 | 2.7453503522 |
+| coupon_capped_at_target_not_base | 97.0558651439 | -1.2132996511 | 0.0594628077 |
+| arrears_counterfactual | 90.6222680483 | -7.6468967467 | 2.6912749332 |
+
+Arrears, segunda sigma y reloj ACT/365 son **contrafactuales de trazabilidad**; no se
+presentan como lecturas contractuales igualmente abiertas tras la segunda respuesta.
+El recorte también queda descartado por la confirmación final. Su fila se conserva
+como contrafactual de trazabilidad; 97.05586514 no es el precio del contrato confirmado.
+Predictor-corrector no demuestra convergencia por refinamiento Browniano. El cambio de
+numeraire se compara con números comunes, sin exigir igualdad por path o de las medias.
+
+## Autocall por periodo bajo Q terminal
 
 | Periodo | Paths | Frecuencia |
 | --- | ---: | ---: |
-| 1–3 | 0 | 0% |
-| 4 | 10 | 5% |
-| 5 | 113 | 56.5% |
-| 6 | 34 | 17% |
-| 7 | 12 | 6% |
-| 8 | 6 | 3% |
+| 1 | 0 | 0% |
+| 2 | 0 | 0% |
+| 3 | 0 | 0% |
+| 4 | 7 | 3.5% |
+| 5 | 116 | 58% |
+| 6 | 37 | 18.5% |
+| 7 | 10 | 5% |
+| 8 | 5 | 2.5% |
 | 9 | 3 | 1.5% |
 | 10 | 3 | 1.5% |
 | 11 | 1 | 0.5% |
 | 12 | 1 | 0.5% |
 | 13 | 1 | 0.5% |
-| 14–18 | 0 | 0% |
+| 14 | 0 | 0% |
+| 15 | 0 | 0% |
+| 16 | 0 | 0% |
+| 17 | 0 | 0% |
+| 18 | 0 | 0% |
 | 19 | 1 | 0.5% |
-| 20 autocall | 0 | 0% |
-| 20 vencimiento sin autocall | 15 | 7.5% |
+| 20 | 0 | 0% |
+| Vencimiento sin autocall | 15 | 7.5% |
 
-Son frecuencias **bajo la medida del bono terminal**, no probabilidades físicas.
-Lo mismo se aplica a la vida media publicada. Contajes de autocall más supervivientes=200.
-
-## Convenciones y sensibilidades sobre los mismos shocks
-
-Base: fecha 26/01/2022, pagos semestrales sin ajuste hasta 26/01/2032; bono terminal
-26/07/2032; forward F0 fijo, F1…F20 aleatorios. Fixing advance. Volatilidades de F1…F20
-=F10:F29, constantes hasta reset. Cargas finales originales y A Aᵀ en ambos términos.
-ACT/365 tanto en devengo como en reloj de difusión; log-Euler; cupón completo al cruce.
-
-| Cambio aislado | Precio | Diferencia base | SE de diferencia pareada |
-| --- | ---: | ---: | ---: |
-| Predictor-corrector | 98.5561817103 | +0.0363496124 | 0.0112374740 |
-| Reloj de difusión h=.5 | 98.5293632017 | +0.0095311038 | 0.0272010800 |
-| Bono terminal t20 (10 años calendario) | 98.4768989329 | -0.0429331649 | 0.0714644716 |
-| F1 usa primera fila de volatilidad | 98.2909499837 | -0.2288821142 | 0.1279515318 |
-| Sigma=0, control determinista | 105.3565962616 | +6.8367641638 | 2.6384896011 |
-| Cupón recortado al objetivo (no base) | 97.3279125493 | -1.1919195485 | 0.0588458159 |
-
-No se mantienen escenarios de floor o cupón efectivo: el profesor los ha descartado.
-La sensibilidad a cupón recortado sigue siendo material porque esa condición no se
-confirmó expresamente. Predictor-corrector no acredita convergencia temporal: no añade
-subpasos Brownianos. El cambio de bono terminal implica cambio de medida y dimensión;
-la diferencia pareada es una comparación de implementaciones con números comunes.
-
-## Fórmulas operacionales
-
-Con c1=c2=.01, b3=b4=0, b5…8=.01, b9…12=.0125, b13…16=.015 y b17…20=.02:
+## Fórmulas y evidencias
 
 \[
-c_j=c_{j-1}+b_j-F_{j-1}(t_{j-1}),\qquad
+c_1=c_2=.01,\quad c_j=c_{j-1}+b_j-F_{j-1}(t_{j-1}),\quad
 S_m=\sum_{j=1}^m\delta_{j-1}c_j,\quad
-\tau=\min(\{m:S_m\ge.04\}\cup\{20\}).
+\tau=\min(\{m:S_m\ge .04\}\cup\{20\}).
 \]
 
-\[
-CF_m=100\,1_{m\le\tau}\delta_{m-1}c_m+100\,1_{m=\tau}.
-\]
-
-Con X_i=F_i+.03, lambda_i=sigma_i a_i y medida Q^21:
+b3=b4=0; b5…8=.01; b9…12=.0125; b13…16=.015; b17…20=.02.
+CF_m=100 1_(m<=tau) delta_(m−1)c_m +100 1_(m=tau), sin floor ni recorte en el caso base.
+Con X_i=F_i+.03 y lambda_i=sigma_i a_i:
 
 \[
 \mu_i=-\sum_{j=i+1}^{20}\frac{\delta_j(F_j+.03)}{1+\delta_jF_j}
 \lambda_i\cdot\lambda_j,\quad
-X_i'=X_i\exp[(\mu_i-\|\lambda_i\|^2/2)h+\sqrt h\,\lambda_i\cdot Z].
+X_i'=X_i\exp[(\mu_i-\|\lambda_i\|^2/2)h+\sqrt h\,\lambda_i\cdot Z],\quad h=.5.
 \]
 
 \[
@@ -106,11 +131,13 @@ P(t_m,t_{21})=\prod_{j=m}^{20}(1+\delta_jF_j(t_m))^{-1},\quad
 V=\frac{P(0,t_{21})}{200}\sum_p\sum_m\frac{CF_{p,m}}{P_p(t_m,t_{21})}.
 \]
 
-Los errores frecuentes son aplicar ACT/365 dos veces, borrar la memoria negativa,
-usar F+s en el denominador, incluir j=i en el drift, omitir F20 del descuento final,
-o calcular SE sobre pagos en lugar de trayectorias. Tests cubren esos caminos.
+19 tests superados; contraste de todos los PV con referencia escalar, máximo error
+2.842e-13; sigma=0 coincide con descuento directo.
+230 controles de bonos (máximo |z|=2.026328) y 60 caplets contra
+Black desplazado (máximo |z|=1.826102), usando exclusivamente normales originales.
+Son verificaciones con tolerancias MC, no pruebas de cobertura exacta o convergencia.
 
-## Reproducir, leer y entregar
+## Reproducción y entregas
 
 ```sh
 python -m pip install -r requirements.txt
@@ -118,21 +145,19 @@ python scripts/value_snowblade.py
 PYTHONPATH=src python -m unittest discover -s tests -v
 python scripts/validate_solution.py
 python scripts/build_delivery.py
+python scripts/recalculate_delivery.py
 python scripts/check_delivery.py
 ```
 
-`check_delivery.py` usa además pypdf (incluido en requirements.txt). La generación PDF
-requiere las fuentes DejaVu en `/usr/share/fonts/truetype/dejavu/`.
+El PDF requiere DejaVu en `/usr/share/fonts/truetype/dejavu/`. El recálculo requiere
+`soffice` en PATH o `--soffice /ruta/soffice`, trabaja solo sobre copias temporales
+y usa controles centinela y sigma=0. Microsoft Excel no está probado.
 
-- [Excel con implementación](../entrega/Snowblade_LMM.xlsx): inputs, calendario, shocks,
-  estados con fórmulas de LMM, cashflows, 200 PV, resumen y sensibilidades.
-- [Memoria PDF](../entrega/Memoria_Snowblade.pdf): 5 páginas, cifras, método y límites.
-- [Resultados máquina](../outputs/resultados.json), [200 PV](../outputs/path_pv.csv),
-  [4000 registros de flujos](../outputs/cashflows.csv),
-  [contraste numérico](../outputs/validacion.json) y
-  [comprobación de entregas](../outputs/entrega_validacion.json).
+- [Excel actualizado](../entrega/Snowblade_LMM.xlsx) y [memoria PDF](../entrega/Memoria_Snowblade.pdf).
+- [Resultados JSON](../outputs/resultados.json), [200 PV](../outputs/path_pv.csv),
+  [4.000 flujos](../outputs/cashflows.csv) y [referencia/Black](../outputs/validacion.json).
+- [Recálculo real](../outputs/recalculo_validacion.json) y [relectura de entrega](../outputs/entrega_validacion.json).
 
-Los originales no se han convertido ni modificado. El XLSX es nuevo, no contiene VBA.
-Sus fórmulas llevan caches numéricas de Python contrastadas con referencia escalar.
-No se ha ejecutado recálculo en Excel/LibreOffice: no afirmar equivalencia de ejecución
-entre motores. El libro expone esa limitación y debe regenerarse si cambia el calendario.
+El XLSX es nuevo y sin VBA, con todas las 21 sigmas originales visibles y la fila extra
+identificada. No se convierte ni modifica el original. Las tablas de escenarios son
+estáticas y requieren regeneración si cambia la configuración.

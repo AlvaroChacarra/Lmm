@@ -22,9 +22,9 @@ def run():
     checks=martingale_checks(s)
     alternatives={}
     for name,config in [('predictor_corrector',replace(base,scheme='predictor_corrector')),
-                        ('diffusion_dt_05',replace(base,diffusion_clock='template')),
+                        ('act365_diffusion_counterfactual',replace(base,diffusion_clock='act365')),
                         ('terminal_10_years',replace(base,terminal=20)),
-                        ('vol_mapping_first_row',replace(base,vol_offset=0)),
+                        ('second_vol_row_counterfactual',replace(base,vol_offset=1)),
                         ('zero_volatility',replace(base,vol_scale=0.))]:
         report,_,alt_pv,_,_=estimate(simulate(data,config))
         report['paired_difference_to_base']=float(np.mean(alt_pv-pv))
@@ -34,7 +34,21 @@ def run():
     capped['paired_difference_to_base']=float(np.mean(capped_pv-pv))
     capped['paired_difference_se']=float(np.std(capped_pv-pv,ddof=1)/np.sqrt(len(pv)))
     alternatives['coupon_capped_at_target_not_base']=capped
-    payload={'status':'PROVISIONAL_CON_CONVENCIONES_EXPLICITAS','source_hashes':data.hashes,
+    arrears_fixings=np.stack([s.states[j,:,j] for j in range(1,21)],axis=1)
+    arrears,_,arrears_pv,_,_=estimate(replace(s,fixings=arrears_fixings))
+    arrears['paired_difference_to_base']=float(np.mean(arrears_pv-pv))
+    arrears['paired_difference_se']=float(np.std(arrears_pv-pv,ddof=1)/np.sqrt(len(pv)))
+    alternatives['arrears_counterfactual']=arrears
+    # La revisión anterior queda reproducible con sus dos convenciones sustituidas.
+    previous,_,previous_pv,_,_=estimate(simulate(data,Config(diffusion_clock='act365',vol_offset=1)))
+    reconciliation={'previous_config':previous['config'],'previous_price':previous['price'],
+                    'new_minus_previous':float(np.mean(pv-previous_pv)),
+                    'paired_difference_se':float(np.std(pv-previous_pv,ddof=1)/np.sqrt(len(pv)))}
+    payload={'status':'ESTIMACION_CON_OPCION_A_CONFIRMADA','source_hashes':data.hashes,
+             'change_reconciliation':reconciliation,
+             'contract_status':{'fixing':'ADVANCE_CONFIRMED',
+                                'coupon_at_autocall':'FULL_COUPON_CONFIRMED_OPTION_A',
+                                'sigma_constant_until_reset':'MINIMAL_MODEL_ASSUMPTION'},
              'professor_clarifications_source':'respuestas aportadas por el usuario; correo sin fecha','versions':{'python':platform.python_version(),
              'numpy':np.__version__,'scipy':scipy.__version__,'openpyxl':openpyxl.__version__},
              'base':result,'sensitivities':alternatives,

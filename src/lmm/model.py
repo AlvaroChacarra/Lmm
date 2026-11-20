@@ -7,8 +7,8 @@ from .inputs import add_months, interpolate
 class Config:
     terminal: int = 21
     scheme: str = 'log_euler'
-    diffusion_clock: str = 'act365'
-    vol_offset: int = 1  # F1 toma la segunda fila de la tabla de 21 sigmas
+    diffusion_clock: str = 'template'
+    vol_offset: int = 0  # Profesor: F1 usa la primera sigma; el tipo inicial es spot
     vol_scale: float = 1.0
 
 @dataclass
@@ -52,7 +52,8 @@ def simulate(inputs, config=Config()):
     delta=np.diff(days)/365
     p0=interpolate(inputs,days)
     f0=(p0[:-1]/p0[1:]-1)/delta
-    # F0 conocido en origen; PCA fila 0 corresponde a F1.
+    # Índice 0: spot del primer semestre, conocido, sin sigma.
+    # PCA fila 0 y sigma fila 0 corresponden al primer forward futuro F1.
     diffusion=np.zeros((terminal,3))
     count=terminal-1
     diffusion[1:]=inputs.loadings[:count]*inputs.vols[config.vol_offset:config.vol_offset+count,None]*config.vol_scale

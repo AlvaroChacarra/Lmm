@@ -42,3 +42,6 @@ Valorar por simulación Monte Carlo el instrumento del Anexo I utilizando el mod
 Esta lista refleja solo las carencias del PDF. Las tres primeras cuestiones fueron
 resueltas posteriormente por el profesor: [aclaraciones vigentes](ACLARACIONES_PROFESOR.md).
 Las convenciones restantes están en [DECISIONES.md](DECISIONES.md).
+
+La segunda ronda confirma advance y h=.5 de difusión, y corrige el mapa spot/primera
+volatilidad. Ver ACLARACIONES_PROFESOR.md; ACT/365 de cupones permanece vigente.
