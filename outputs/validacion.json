@@ -1,0 +1,17 @@
+{
+  "all_200_paths_scalar_reference": {
+    "forward_max_abs_error": 1.457167719820518e-15,
+    "coupon_max_abs_error": 5.950795411990839e-14,
+    "principal_max_abs_error": 0.0,
+    "path_pv_max_abs_error": 2.2737367544323206e-13
+  },
+  "zero_volatility_direct_discount_max_abs_error": 7.105427357601002e-14,
+  "zero_volatility_price": 105.35659626163304,
+  "martingale_tests": 230,
+  "mc_checks_all_within_5se": true,
+  "martingale_max_abs_z": 2.0285796829560123,
+  "originals": {
+    "2026_Datos.xlsm": "74d51e6531cc4b46e8cf7d2ddbe60ce930a10c0cf908942b39454d557c7ec0bd",
+    "2026_Ejercicio.pdf": "5bd06ea075689c9086eda2ac698b40d2f5a2a7079367bcfac824bd90bf875b76"
+  }
+}

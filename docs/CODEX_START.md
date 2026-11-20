@@ -1,5 +1,9 @@
 # Codex — instrucciones listas para copiar
 
+**El motor y las entregas ya existen.** Para continuar, leer primero
+[ESTADO.md](ESTADO.md) y [RESULTADOS.md](RESULTADOS.md). Los prompts siguientes son un
+catálogo de fases; no reiniciar Fase 0 ni ignorar las respuestas del profesor.
+
 El repositorio ya contiene los originales PDF y XLSM. Se trabaja por fases separadas para reducir errores y mantener bajo control el contexto.
 
 ## Prompt 1 — Auditoría inicial (PRIMERA EJECUCIÓN)
@@ -10,7 +14,7 @@ El repositorio ya contiene los originales PDF y XLSM. Se trabaja por fases separ
 >
 > Ejecuta **únicamente la Fase 0 de AGENTS.md**. Quiero una auditoría técnica ejecutable y orientada a despejar riesgos antes de valorar:
 >
-> 1. Confirma integridad de ambos originales con `sha256sum -c data/original/SHA256SUMS`; lista hojas, rangos, formatos, fórmulas, valores, macros y anomalías relevantes del XLSM. Si necesitas extraer VBA, hazlo sin ejecutarlo.
+> 1. Confirma integridad de ambos originales con `(cd data/original && sha256sum -c SHA256SUMS)`; lista hojas, rangos, formatos, fórmulas, valores, macros y anomalías relevantes del XLSM. Si necesitas extraer VBA, hazlo sin ejecutarlo.
 > 2. Localiza y documenta las entradas precisas (hoja, rango, índice, unidad): curva, plazos, day count, volatilidades, shifted rate, correlación, PCA, 200 trayectorias y convención de los shocks. No asumir dimensiones ni signos porque estén sugeridos en documentación previa: comprobarlos.
 > 3. Reconstruye calendario de fijación/devengo/pago de los 20 periodos, forwards iniciales, medida del bono terminal y la dinámica shifted-LMM con drift correcto. Deja señalados los posibles errores de índices y el encaje de PCA.
 > 4. Formaliza de manera matemática el cupón recursivo, la cancelación automática y la amortización. Destaca cualquier ambigüedad contractual material: especialmente «intereses anuales acumulados del 4%», su cálculo con ACT/365, cupones negativos y si el cupón se paga en el autocall. Propón una convención principal justificada y, cuando proceda, escenarios alternativos.

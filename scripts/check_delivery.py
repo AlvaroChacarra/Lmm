@@ -1,0 +1,43 @@
+"""Lee Excel/PDF de entrega y reconcilia cachés; no sustituye recálculo en Excel."""
+import json
+import sys
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'src'))
+import numpy as np
+import openpyxl
+from pypdf import PdfReader
+from lmm.inputs import load_inputs,verify_originals
+from lmm.model import simulate
+from lmm.valuation import estimate
+
+data=load_inputs();s=simulate(data);r,cf,pv,cp,pp=estimate(s)
+w=openpyxl.load_workbook(ROOT/'entrega/Snowblade_LMM.xlsx',read_only=True,data_only=True)
+np.testing.assert_allclose(w['Resumen']['B2'].value,r['price'],rtol=0,atol=1e-12)
+np.testing.assert_allclose(w['Resumen']['B5'].value,r['standard_error'],rtol=0,atol=1e-12)
+actual=np.array([[c.value for c in row[7:28]] for row in w['Estados'].iter_rows(min_row=2)],float)
+expected=s.states.transpose(1,0,2).reshape(-1,21)
+np.testing.assert_allclose(actual,expected,rtol=0,atol=1e-14)
+flows=np.array([[c.value for c in row[3:15]] for row in w['Flujos'].iter_rows(min_row=2)],float)
+for column,expected_cf in [(0,s.fixings),(1,cf.rates),(3,cf.alive_before),(4,cf.paid_coupon),
+                           (5,cf.cumulative_paid_fraction),(6,cf.call_event),(7,cf.paid_principal),(8,s.terminal_bonds)]:
+    np.testing.assert_allclose(flows[:,column],expected_cf.ravel(),rtol=0,atol=1e-12)
+path_values=np.array([[c.value for c in row[1:4]] for row in w['Paths'].iter_rows(min_row=2)])
+np.testing.assert_allclose(path_values,np.stack([cp,pp,pv],axis=1),rtol=0,atol=1e-12)
+error_cells=[f'{sh.title}!{c.coordinate}' for sh in w for row in sh for c in row if c.data_type=='e']
+assert not error_cells,error_cells
+w.close()
+f=openpyxl.load_workbook(ROOT/'entrega/Snowblade_LMM.xlsx',read_only=True,data_only=False)
+count=sum(c.data_type=='f' for sh in f for row in sh for c in row)
+f.close()
+pdf=PdfReader(ROOT/'entrega/Memoria_Snowblade.pdf')
+text='\n'.join(p.extract_text() for p in pdf.pages)
+assert len(pdf.pages)==5
+assert all(value in text for value in ['98,5198','2,6385','93,3168','103,7228'])
+assert 'cupones negativos' in text
+report={'excel_state_values_checked':actual.size,'excel_flow_rows_checked':len(flows),
+        'excel_paths_checked':len(path_values),'excel_formula_count':count,'excel_cached_error_cells':error_cells,
+        'excel_engine_recalculation':'NOT_EXECUTED','pdf_pages':len(pdf.pages),'pdf_key_figures_match':True,
+        'original_sha256':verify_originals()}
+(ROOT/'outputs/entrega_validacion.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

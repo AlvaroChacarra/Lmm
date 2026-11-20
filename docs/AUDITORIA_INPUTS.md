@@ -1,5 +1,10 @@
 # Fase 0 — Auditoría cuantitativa de inputs y contrato Snowblade
 
+> **Documento histórico de Fase 0.** Las ambigüedades de cupón, floor y magnitud del
+> objetivo se resolvieron después: ver [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
+> El estado y la solución vigentes están en [RESULTADOS.md](RESULTADOS.md). Las
+> recomendaciones de este documento reflejan la evidencia disponible antes de las respuestas.
+
 Fecha: 2026-11-13. Baseline: `15359f2` (main al clonar). Modo **standard**.
 Veredicto: **PASS WITH CONDITIONS** para comenzar una valoración provisional por escenarios;
 no autoriza confiar en un precio final. Conformidad de Fase 0: **FULL**.

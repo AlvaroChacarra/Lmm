@@ -1,63 +1,54 @@
-# Estado de proyecto
+# Estado del proyecto
 
-**Fecha:** 2026-11-13. **Última fase concluida:** Fase 0, auditoría cuantitativa.
-**Estado:** inputs inspeccionados y formulación documentada; sin precio calculado.
-**Siguiente fase:** Fase 1, primera valoración provisional por escenarios.
-Baseline revisado: `15359f2`. Rama: `audit/fase-0-snowblade`.
-Commit de esta fase: consultar `git log -1 --format='%H %cs' -- docs/ESTADO.md`.
+**Estado:** solución numérica y entregas generadas con las aclaraciones del profesor.
+**Resultado:** 98.51983210 por 100; SE 2.63848960; IC 95% aproximado [93.31684526,103.72281893].
+**Últimas fases ejecutadas:** Fase 1 (motor), comprobaciones de Fase 2 y generación de
+Excel/PDF de Fase 4; explicación técnica en RESULTADOS y memoria. La Fase 3 de tutoría
+interactiva no se ha ejecutado ni se impone como condición para entregar.
+**Estado de confianza:** ÁMBAR por 200 paths con cola asimétrica y convenciones residuales.
 
-## Completado y verificado
+Leer [RESULTADOS.md](RESULTADOS.md) para resultados y comandos, [DECISIONES.md](DECISIONES.md)
+para convenciones y [VALIDACION.md](VALIDACION.md) para evidencias. La auditoría inicial
+[AUDITORIA_INPUTS.md](AUDITORIA_INPUTS.md) queda como histórico de Fase 0.
 
-- SHA-256 de PDF/XLSM coincide con manifiesto antes y después; no se guardó el XLSM.
-- PDF original de dos páginas leído; XLSM inspeccionado en modo fórmula y caché y como ZIP/XML.
-- Tres hojas, 70 fórmulas de fechas y sus cachés, errores, metadatos, rangos y VBA extraído
-  estáticamente; CInterPol es log-lineal por defecto. Ninguna macro ejecutada.
-- 70 nodos positivos; 21 sigmas y shift .03. 200 paths con tres bloques de 20 shocks.
-- PCA final normalizada verificada, sin recalcular ni sustituir datos; descomposición
-  aproximada detectada. Diferencia máxima R−AAᵀ=.15350247.
-- Calendario **recomendado**, no contractual, de 20 pagos más semestre terminal auxiliar;
-  21 forwards iniciales y correspondencias de índices en CSV.
-- Drift shifted bajo medida terminal, producto de descuento y payoff formalizados;
-  ejemplo r=0 muestra cancelaciones en periodos 4/6/8 según lectura del trigger.
-- Script de auditoría ejecutado: 22 comprobaciones superadas. No son validación de un motor.
+## Hechos comprobados
 
-## Hipótesis y pendientes materiales
+- SHA-256 de originales conservados. Los 200 paths y las cargas PCA suministradas se usan
+  literalmente. No se ejecuta VBA ni se sobrescribe/convierte el XLSM.
+- Condiciones confirmadas: [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md): tasas
+  anualizadas ACT/365, sin floor, memoria negativa y objetivo efectivo acumulado.
+- Motor `src/lmm/`: lectura, interpolación, calendario, LMM terminal, payoff y PV.
+- 17 tests superados; referencia escalar de los 200 paths, diferencia máxima PV 2.28e-13;
+  sigma=0 coincide con descuento directo (7.11e-14); 230 diagnósticos de bonos dentro de 5SE.
+- 185 autocalls, 15 vencimientos sin autocall, 29 paths con algún cupón negativo.
+- Excel nuevo con fórmulas y caches; memoria PDF de 5 páginas; CSV/JSON reproducibles.
+  No se ha ejecutado recálculo del XLSX con una aplicación Excel.
 
-La fuente no define de forma única unidades del cupón, trigger anual acumulado,
-fixing, fechas ajustadas, malla ni correspondencia exacta del numerario. Base propuesta:
-tasas anualizadas, sin floor, objetivo efectivo neto desde origen, pago completo del evento,
-advance, calendario desde 26/01/2022 con terminal 26/07/2032, sigmas constantes.
-D01–D11 registran qué es hecho, propuesta y pregunta abierta. Falta sensibilidad de precio.
-El SE futuro sobre 200 paths no incluirá incertidumbre contractual, PCA o discretización.
+## Pendientes y límites
 
-## Entregables
+- No confirmados por el profesor: fechas/terminal, mapa sigma, fixing y pago completo
+  frente a recorte al objetivo. Convenciones adoptadas y sensibilidades publicadas.
+- El SE no mide riesgo de PCA, parametrización ni discretización. El IC es aproximado,
+  con cobertura no garantizada ante la cola negativa de una muestra de 200 paths.
+- El contraste escalar es otra implementación en el mismo workspace, no revisión por
+  un agente externo ni auditoría independiente de mercado/calibración.
+- Antes de entrega académica definitiva: comprobar recálculo del XLSX en la aplicación
+  del receptor y, si se consigue, confirmar tratamiento del exceso del objetivo.
 
-| Entregable | Estado |
-| --- | --- |
-| Auditoría de inputs y formulación | Completada: AUDITORIA_INPUTS.md |
-| Evidencia reproducible | Script, JSON, CSV y fuente CInterPol extraída |
-| Decisiones contractuales finales | Pendientes; bases y alternativas documentadas |
-| Motor Monte Carlo | No implementado (fuera de Fase 0) |
-| Tests del motor / validación independiente | Pendientes |
-| Precio y métricas de 200 paths | Pendientes |
-| Excel y PDF de entrega | Pendientes (no generados) |
+## Operación y publicación
 
-## Reproducción
-
-Desde la raíz, comandos completos y dependencias en AUDITORIA_INPUTS.md:
+Rama `valuation/snowblade-confirmado`, basada en `c98855c` (auditoría, PR #2).
+No se fusionan PR automáticamente. El commit vigente se consulta con
+`git log -1 --format='%H %cs' -- docs/ESTADO.md`.
 
 ```sh
+python scripts/value_snowblade.py
+PYTHONPATH=src python -m unittest discover -s tests -v
+python scripts/validate_solution.py
+python scripts/build_delivery.py
+python scripts/check_delivery.py
 (cd data/original && sha256sum -c SHA256SUMS)
-/tmp/lmm-audit-venv/bin/python scripts/audit_phase0.py
-git diff --exit-code -- data/original
 ```
 
-Archivos de esta fase: `scripts/audit_phase0.py`, `scripts/requirements-audit.txt`,
-`docs/AUDITORIA_INPUTS.md`, `docs/DECISIONES.md`, `docs/ESTADO.md`, `docs/VALIDACION.md`,
-`docs/evidencias/{auditoria_fase0.json,calendario_recomendado.csv,cinterpol_fuente.bas}`.
-
-Siguiente paso concreto (sin ejecutarlo en esta fase): lector de inputs, mapa H-cal,
-log-Euler terminal con A original y AAᵀ, payoff parametrizado y descuento terminal;
-validar sigma=0, índices, principal único y martingalas; reportar precio provisional
-por 100, desglose, autocall/duración y SE/IC con exactamente los 200 paths. Comparar
-primero las interpretaciones D01/D02 usando idénticas trayectorias.
+No hace falta repetir Fase 0 para retomar. Próximo trabajo material: recálculo del libro
+en Excel y resolución de la convención de exceso, sin reabrir D01–D03 ya confirmadas.
