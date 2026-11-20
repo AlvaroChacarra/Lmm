@@ -1,4 +1,4 @@
-"""Recálculo real en copias temporales con LibreOffice: centinela + sigma cero.
+"""Recálculo real en copias temporales con LibreOffice: centinelas, sigma cero y nominal doble.
 Nunca abre el XLSM original con una aplicación ni sobrescribe los entregables.
 Requiere soffice en PATH (o --soffice /ruta/soffice).
 """
@@ -26,14 +26,14 @@ from lmm.valuation import estimate
 NS={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 SENTINEL=123456.789
 
-def make_copy(source,dest,zero=False):
+def make_copy(source,dest,zero=False,nominal=None):
     count=0
     with zipfile.ZipFile(source) as src,zipfile.ZipFile(dest,'w',zipfile.ZIP_DEFLATED) as out:
         sheets=ET.fromstring(src.read('xl/workbook.xml')).findall('m:sheets/m:sheet',NS)
         relationships=ET.fromstring(src.read('xl/_rels/workbook.xml.rels'))
         targets={e.attrib['Id']:posixpath.normpath(posixpath.join('xl',e.attrib['Target'])) for e in relationships}
-        vol_id=next(e.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'] for e in sheets if e.attrib['name']=='Volatilidades')
-        vol_path=targets[vol_id]
+        sheet_paths = {sheet.attrib['name']: targets[sheet.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id']]
+                       for sheet in sheets}
         for item in src.infolist():
             data=src.read(item.filename)
             if item.filename.startswith('xl/worksheets/sheet') and item.filename.endswith('.xml'):
@@ -43,7 +43,9 @@ def make_copy(source,dest,zero=False):
                         v=c.find('m:v',NS)
                         if v is None:v=ET.SubElement(c,'{'+NS['m']+'}v')
                         v.text=str(SENTINEL);count+=1
-                    if zero and item.filename==vol_path:
+                    if nominal is not None and item.filename == sheet_paths['Parametros'] and c.attrib['r'] == 'B2':
+                        c.find('m:v', NS).text = str(nominal)
+                    if zero and item.filename==sheet_paths['Volatilidades']:
                         address=c.attrib['r']
                         if address.startswith('B') and address[1:].isdigit() and 2<=int(address[1:])<=22:
                             c.find('m:v',NS).text='0'
@@ -102,6 +104,11 @@ def audit(executable):
         zero_book=recalc(executable,zero_copy,temp/'zero',temp/'profile_zero',0)
         w=openpyxl.load_workbook(zero_book,read_only=True,data_only=True)
         np.testing.assert_allclose(w['Resumen']['B2'].value,zr['price'],rtol=0,atol=1e-10)
+        distribution = list(w['Resumen'].iter_rows(min_row=15, max_row=34, max_col=3, values_only=True))
+        expected_counts = zr['autocall_counts']
+        np.testing.assert_array_equal(distribution, [
+            (period, count / len(zpv), count) for period, count in enumerate(expected_counts, 1)
+        ])
         states=np.array([[c.value for c in row[7:28]] for row in w['Estados'].iter_rows(min_row=2)],float)
         expected_states=zero.states.transpose(1,0,2).reshape(-1,21)
         np.testing.assert_allclose(states,expected_states,rtol=0,atol=1e-12)
@@ -110,6 +117,14 @@ def audit(executable):
         np.testing.assert_allclose(paths,expected_paths,rtol=0,atol=1e-10)
         zero_errors=[(sh.title,c.coordinate) for sh in w for row in sh for c in row if c.data_type=='e'];w.close()
         assert not zero_errors
+        double_copy = temp / 'nominal_200.xlsx'
+        make_copy(source, double_copy, nominal=200)
+        double_book = recalc(executable, double_copy, temp/'double', temp/'profile_double', 0)
+        w = openpyxl.load_workbook(double_book, read_only=True, data_only=True)
+        label, double_pv = next(w['Resumen'].iter_rows(min_row=2, max_row=2, max_col=2, values_only=True))
+        w.close()
+        assert label == 'PV del nominal introducido'
+        np.testing.assert_allclose(double_pv, 2 * values['Resumen']['B2'], rtol=0, atol=1e-10)
     assert sha256(source.read_bytes()).hexdigest()==before
     assert verify_originals()==originals
     record={'engine':version,'source_xlsx_sha256':before,'base_config':estimate(simulate(inputs))[0]['config'],
@@ -118,6 +133,8 @@ def audit(executable):
             'max_formula_cache_difference':residual,'base_price_recalculated':values['Resumen']['B2'],
             'zero_volatility_price':zr['price'],'zero_volatility_state_max_error':float(np.max(abs(states-expected_states))),
             'zero_volatility_paths_max_error':float(np.max(abs(paths-expected_paths))),
+            'zero_volatility_autocall_counts':[row[2] for row in distribution],
+            'nominal_200_pv_recalculated':double_pv,
             'zero_volatility_error_cells':zero_errors,'original_sha256':originals,'microsoft_excel_tested':False}
     (ROOT/'outputs/recalculo_validacion.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(record,ensure_ascii=False,indent=2))
