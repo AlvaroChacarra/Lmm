@@ -1,28 +1,50 @@
-# Registro de decisiones
+# Decisiones finales y razones
 
-Estado vigente tras la confirmación final de opción A: cupón íntegro al autocall,
-fixing advance, primera sigma para el primer forward futuro y h=.5. Las bases anteriores se conservan en git y como
-contrafactuales de trazabilidad, no como alternativas igualmente abiertas.
-Fuente de aclaraciones: [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
-El histórico anterior se conserva en git; la auditoría Fase 0 sigue como fotografía inicial.
+Las respuestas literales y su alcance están en [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
+Las fórmulas pertenecen a [FUNDAMENTOS.md](FUNDAMENTOS.md), los índices a
+[AUDITORIA_INPUTS.md](AUDITORIA_INPUTS.md) y las cifras a [RESULTADOS.md](RESULTADOS.md).
+Aquí se registra por qué esa es la solución elegida y qué estatus tiene cada decisión.
 
-| ID | Pregunta | Estado vigente | Decisión, evidencia y consecuencias |
-| --- | --- | --- | --- |
-| D01 | ¿Qué acumula el objetivo del 4%? | CONFIRMADA LA MAGNITUD | Intereses efectivos netos desde origen: S_m=sum delta c. No anualizar de nuevo ni sumar tasas. Profesor aporta ejemplo 2%×.5+3%×.5. Test en cada pago es convención operacional adoptada. |
-| D02 | ¿Cupones anualizados? | CONFIRMADA | 1% anualizado inicial y ACT/365; recurrencia en tasas anualizadas, pago H delta c. La lectura de 1% efectivo por semestre queda descartada. |
-| D03 | ¿Floor y memoria negativa? | CONFIRMADA | No floor; inversor paga cupón negativo, que permanece como base del siguiente. Las hipótesis de floor del pago/estado quedan descartadas. |
-| D04 | ¿Qué fixing? | CONFIRMADA EN SEGUNDA RONDA | Advance: r_j=F_(j−1)(t_(j−1)); pago t_j. «Si, lo habeis hecho correctamente». No reabrir arrears como interpretación contractual vigente. |
-| D05 | ¿N+1? | ELECCIÓN ADMITIDA | Profesor: «En realidad da igual». Se conserva t21=26/07/2032 frente a último pago t20=26/01/2032. Elección de numerario con drift/descuento consistentes; no exige igualdad muestral bajo medidas distintas. F20 sigue en el descuento final. |
-| D06 | ¿CInterPol? | EQUIVALENTE IMPLEMENTADO; VBA NO EJECUTADO | Equivalente log-lineal modo0; se rechaza extrapolación no necesaria. Caches/nodos contrastados en Fase0; implementación Python contrastada por referencia escalar. |
-| D07 | ¿PCA/covarianza? | IMPLEMENTADA SEGÚN FUENTE | A=G117:I136 literal, orden y signos conservados; A Aᵀ en drift y difusión. Sin nuevo sqrt(lambda), normalización ni sustitución PCA. Descomposición aproximada residual documentada en auditoría. |
-| D08 | ¿Fechas/reloj? | h=.5 CONFIRMADO; CALENDARIO ADOPTADO | Partición de difusión semestral 30/360, h=.5, según segunda respuesta. Cupones y denominadores de forwards devengan ACT/365. Aniversarios desde C2 sin ajuste/lag son supuesto de calendario. No duplicar ni confundir los dos relojes. |
-| D09 | ¿Volas? | MAPA CORREGIDO POR PROFESOR | El tipo inicial es spot, sin sigma. Primer forward futuro F1 usa F9; F_i usa F(8+i), i=1…20, hasta F28. F29 extra no usada, preservada. Sigma constante hasta reset sigue como supuesto mínimo, no confirmación literal ni stripping externo. |
-| D10 | ¿Exceso del objetivo? | CONFIRMADA — OPCIÓN A | El profesor confirma expresamente opción A y que no se capa el último cupón. Cupón íntegro y principal en la liquidación del evento. Ejemplo 3.80+.60: pago100.60 e intereses4.40. Recorte descartado para el contrato; solo contrafactual de trazabilidad. Caso base y precio98.26916479 ya correctos. |
-| D11 | ¿Esquema? | IMPLEMENTADA Y CONTRASTADA | Log-Euler con drift congelado y estado anterior común. Predictor-corrector con mismos shocks publicado como sensibilidad actual. Es control de sensibilidad, no test de convergencia con subpasos. |
-| D12 | ¿Estadística y colas? | IMPLEMENTADA | 200 paths originales sin exclusiones/recentrado. SE sobre los 200 PV completos; IC Student aproximado. Los cinco PV negativos actuales son compatibles con cupones sin floor. Diagnóstico sin peor path no es precio alternativo. |
-| D13 | ¿Probabilidades/vida media? | IMPLEMENTADA | Frecuencias y vida media bajo Q terminal, no probabilidades físicas. No presentar como pronósticos comerciales. |
-| D14 | ¿Entrega Excel? | RECÁLCULO EXTERNO REPRODUCIBLE | Libro nuevo XLSX sin VBA. scripts/recalculate_delivery.py fuerza LibreOffice con caches centinela y sigma=0 en copias; evidencia en outputs/recalculo_validacion.json. Microsoft Excel no probado; original intacto. |
+| ID | Decisión vigente | Fundamento y alternativa descartada |
+| --- | --- | --- |
+| D01 | Acumular intereses efectivos netos desde origen | Profesor: suma de intereses reales; ejemplo 2%×.5+3%×.5. Sumar tasas o anualizar de nuevo responde a otro contrato. Los cupones negativos restan. |
+| D02 | Cupones en tasas anuales; pago con ACT/365 | Confirmado por el profesor. El 1% no es un importe efectivo del 1% por semestre. Devengar una vez. |
+| D03 | Sin floor; memoria del cupón negativo | Confirmado. Un floor del pago o del estado cambiaría los cupones futuros y el trigger. No introducir protección por costumbre comercial. |
+| D04 | Fixing advance | Confirmado al explicar que se usa el Euribor fijado al inicio del semestre. Observar el Euribor al pago sería una estructura in-arrears distinta. |
+| D05 | Bono terminal a t21, seis meses después del último pago | Elección admitida por el profesor. No añade cupón. Cambiar de numeraire exige cambiar medida/drift y descuento; dos muestras finitas no tienen por qué dar la misma media. |
+| D06 | Interpolar logaritmos de factores, modo0 de CInterPol | Equivalente a la función suministrada. No spline ni interpolación de tipos cero. Python rechaza extrapolación, innecesaria en el calendario final; el VBA no se ejecuta. |
+| D07 | Cargas finales G117:I136 literales y A Aᵀ en todo el modelo | La plantilla ya las normaliza. Reescalarlas otra vez altera sigmas; usar R original en el drift y A Aᵀ en difusión rompe la coherencia de medida. La aproximación PCA se conserva y se declara. |
+| D08 | h=.5 de difusión y ACT/365 de devengo | Confirmación del profesor sobre partición 30/360. Son funciones distintas; no trasladar .5 automáticamente al importe de los cupones. Aniversarios sin ajuste ni lag son un supuesto mínimo de calendario. |
+| D09 | Spot inicial sin sigma; F1 usa la primera sigma | Aclaración expresa del profesor. Se corrige el antiguo desplazamiento de filas: F9:F28 para F1…F20; F29 extra preservada sin uso. Sigma constante hasta reset es parametrización mínima, no respuesta literal adicional. |
+| D10 | Opción A: cupón íntegro más nominal al autocall | Confirmación final explícita. No limitar el acumulado a exactamente 4%. El ejemplo 3,80+.60 termina en 4,40 y paga 100,60. La respuesta anterior «Correcto» no era suficiente para escoger entre dos opciones. |
+| D11 | Log-Euler, drift congelado con estado anterior común | Elección numérica sencilla y trazable. Predictor-corrector es un control adicional con los mismos shocks; no se presenta como prueba de convergencia temporal. |
+| D12 | Los 200 paths completos, sin excluir extremos | Exigencia de fuente y condición de reproducibilidad. SE sobre los 200PV; no sobre pagos ni solo sobre cupones. La cola negativa limita la precisión, no autoriza quitar el peor path. |
+| D13 | Frecuencias y vida media bajo Q terminal | Es la medida de simulación. No son probabilidades físicas ni pronósticos de rentabilidad del inversor. |
+| D14 | XLSX nuevo, sin VBA, con fórmulas y recálculo externo probado | Se preserva el XLSM original. Leer cachés no demuestra ejecución: se usa control centinela y sigma=0 en LibreOffice. Microsoft Excel no probado. |
 
-Fuentes numéricas y sensibilidades: [RESULTADOS.md](RESULTADOS.md) y
-[outputs/resultados.json](../outputs/resultados.json). La fecha de publicación y commit se
-obtienen con `git log -1 --format='%H %cs' -- docs/DECISIONES.md`.
+## Correcciones que explican el estado final
+
+La primera solución (`63a681f`) daba **98,51983210** con reloj de difusión ACT/365 y
+la primera sigma sin uso en el spot. Era reproducible bajo esas hipótesis, pero encajar
+las dimensiones del Excel no demostraba la intención del enunciado.
+
+Las respuestas sobre h=.5 y spot/primer forward sustituyeron esas dos hipótesis y
+llevaron el caso final a **98,26916479** (`b5b6b95`). La diferencia conjunta es
+-0,25066730 por 100; no se reconstruye sumando sensibilidades con bases distintas,
+porque el primer cruce de autocall es no lineal.
+
+La confirmación explícita de opción A (`a44632a`) cerró la incertidumbre contractual
+restante **sin cambiar el precio ni los flujos**: ese era ya el payoff implementado.
+El contexto esencial queda en estas decisiones; los documentos y scripts de etapas
+intermedias se recuperan en Git si se necesitan, sin mantenerlos como instrucciones activas.
+
+## Supuestos y límites que no son preguntas contractuales abiertas
+
+El calendario de aniversarios sin ajuste/lag y la sigma constante hasta reset se
+conservan como opciones mínimas de modelización. Las fuentes no identifican una
+parametrización temporal única. Son coherentes con el ejercicio y están contrastadas;
+no se atribuye al profesor una aprobación literal que no dio.
+
+El test de alcance es S>=.04. La explicación final usó «mayor»: en la muestra original
+no hay igualdad exacta al4%, y se comprobó que ambos tests dan los mismos resultados.
+No se afirma precisión de céntimos ni que el IC Monte Carlo englobe el riesgo de modelo.
