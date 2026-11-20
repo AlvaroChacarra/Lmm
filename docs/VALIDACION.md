@@ -1,19 +1,29 @@
-# Plan y evidencia de validación
+# Evidencia de validación — Fase 0
 
-**Ningún test figura como ejecutado todavía.**
+2026-11-13; baseline 15359f2. **No hay motor ni precio validado.**
+El estado inicial «ningún test ejecutado» queda sustituido por la evidencia siguiente.
 
-| Check | Estado | Criterio |
-| --- | --- | --- |
-| Input y checksum de archivos | PENDIENTE | Dos fuentes originales presentes y legibles |
-| Curva e interpolación | PENDIENTE | Reproducción de P(0,T), fechas y forwards |
-| PCA y shock factors | PENDIENTE | Cargas y unidades compatibles; comparación matriz objetivo/aproximada |
-| Shifted lognormal | PENDIENTE | Convención L+shift consistente, dinámica y drift terminal |
-| Malla temporal | PENDIENTE | Tenores/fixings/pagos y ACT/365 sin desfases |
-| Numerario y descuento | PENDIENTE | P(0,T_N+1) E_QT[CF / P(t,T_N+1)] |
-| Payoff Snowblade | PENDIENTE | Ejemplos cerrados y cancelación sin doble pago |
-| Escenario sigma=0 | PENDIENTE | Comparación MC frente a determinista |
-| Probabilidad autocall | PENDIENTE | Suma de frecuencias y supervivencia = 1 |
-| Error estándar | PENDIENTE | Calculado con exactamente los 200 paths suministrados |
-| Python vs Excel vs PDF | PENDIENTE | Cifras, convenciones y formato reconciliados |
+Comando ejecutado: `/tmp/lmm-audit-venv/bin/python scripts/audit_phase0.py`.
+Resultado: **22/22 comprobaciones PASS**. Detalle booleano, versiones y cifras en
+[evidencia JSON](evidencias/auditoria_fase0.json). SHA256SUMS también PASS para ambos
+originales; contraste antes y después en script. VBA extraído, nunca ejecutado. Dos ejecuciones consecutivas produjeron los mismos
+SHA-256 para los tres artefactos de evidencia (JSON, CSV, BAS).
 
-Añadir salidas verificables (comandos, números y logs) a medida que se ejecuten. Las diferencias por discretización/MC/PCA deben distinguirse explícitamente.
+| Check | Resultado y límite |
+| --- | --- |
+| Integridad | PASS, SHA-256 y CRC ZIP; autenticidad externa no acreditada |
+| Estructura/fórmulas | PASS, 70 fórmulas de fechas, cachés concordantes |
+| Aleatorios | PASS, dimensiones 3×20×200, finitos y etiquetas; distribución solo diagnóstica |
+| Curva | PASS, días ordenados, descuentos positivos, origen 1; tipos negativos permitidos |
+| CInterPol modo 0 | PASS, traducción algebraica en nodos y puntos medios <1e-14; Excel no ejecutado |
+| PCA final | PASS, A=B/||B_fila|| y varianzas unitarias; conserva entradas suministradas |
+| PCA exacta del objetivo | NO EXACTA, residual RU−U lambda hasta .03927 y R−AAᵀ hasta .15350 |
+| Forwards y bono terminal | PASS identidades estáticas del calendario propuesto; todavía no MC |
+| Payoff | PASS diagnóstico r=0, triggers distintos 4/6/8; todavía no tests del motor |
+| Originales al terminar | PASS en script; git diff de originales sin cambios |
+| Dinámica / sigma=0 / martingalas | PENDIENTE, Fases 1–2 |
+| Autocall, principal y SE del motor | PENDIENTE, Fases 1–2 |
+| Python vs Excel vs PDF de entrega | PENDIENTE, no se han generado entregas |
+
+El veredicto de avance condicionado está en AUDITORIA_INPUTS.md; estos checks no prueban
+normalidad o independencia del RNG ni resuelven las ambigüedades del contrato.
