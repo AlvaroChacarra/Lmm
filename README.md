@@ -17,7 +17,8 @@ negativa, objetivo de intereses efectivos del 4% y tasas anualizadas ACT/365, se
 El precio depende de convenciones residuales documentadas. El IC es orientativo con
 200 paths y cola negativa; no incluye errores de PCA, malla o interpretación residual.
 Segunda ronda: fixing advance confirmado; difusión h=.5, primera sigma para F1 y spot
-inicial sin sigma. Cupón completo sigue como lectura de trabajo de un «Correcto» ambiguo.
+inicial sin sigma. Confirmación final: **opción A, cupón completo sin recorte**.
+El caso base ya era correcto y el precio no cambia.
 El libro nuevo se ha recalculado con LibreOffice y control centinela; Microsoft Excel no probado.
 
 ```sh
@@ -58,5 +59,5 @@ Para retomar con Codex, leer AGENTS.md y docs/ESTADO.md. No repetir fases conclu
 **Fase 0:** auditoría contractual y de datos → **Fase 1:** baseline reproducible Python con aleatorios originales → **Fase 2:** verificación independiente → **Fase 3:** explicación pedagógica → **Fase 4:** Excel y PDF coherentes con los resultados.
 
 **Estado actual:** motor y entregas generados; 19 tests y reconciliación escalar superados.
-Recálculo LibreOffice reproducible superado. Se mantiene explícita la lectura del exceso
-y los supuestos de calendario y volatilidad constante.
+Recálculo LibreOffice reproducible superado y cupón íntegro al autocall confirmado.
+Permanecen los límites MC y los supuestos mínimos de calendario y volatilidad constante.

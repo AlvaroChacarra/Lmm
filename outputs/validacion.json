@@ -1,4 +1,12 @@
 {
+  "professor_option_A": {
+    "prior_interest_per_100": 3.8,
+    "full_trigger_coupon_per_100": 0.6,
+    "total_payment_per_100": 100.6,
+    "final_interest_per_100": 4.3999999999999995,
+    "redemption_period_fixture": 5,
+    "strict_and_inclusive_trigger_equivalent_on_original_paths": true
+  },
   "base_config": {
     "terminal": 21,
     "scheme": "log_euler",

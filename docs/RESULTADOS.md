@@ -1,9 +1,10 @@
-# Solución actualizada tras la segunda ronda del profesor
+# Solución del Snowblade con opción A confirmada
 
 **Precio estimado: 98.2691647950 por 100.** Se usa fixing advance, h=.5 y
 primera sigma para el primer forward futuro, conservando los 200 paths originales.
-El cupón completo al autocall es lectura de trabajo de la respuesta «Correcto»,
-que no selecciona expresamente entre las dos opciones planteadas.
+La respuesta final del profesor confirma **opción A: cupón completo sin recorte**
+y principal en la liquidación del evento. El caso base ya lo implementaba: precio y
+trayectorias de PV no cambian respecto a b5b6b95.
 
 ## Resultado actual
 
@@ -42,8 +43,9 @@ Detalle y citas en [ACLARACIONES_PROFESOR.md](ACLARACIONES_PROFESOR.md).
 - **Numerario:** P(t,t21), con t20=26/01/2032 último pago y t21=26/07/2032 auxiliar.
   El profesor admite elegir otro bono terminal: hay que cambiar medida/drift/descuento
   coherentemente. No exige precios idénticos con una realización finita de 200 paths.
-- **Exceso:** cupón completo mantenido. No se afirma que «Correcto» ante una disyuntiva
-  descarte inequívocamente el recorte. Su efecto actual se muestra abajo.
+- **Exceso:** opción A confirmada expresamente; cupón íntegro y devolución del nominal.
+  Ejemplo con100 de nominal y3.80 acumulados: siguiente cupón .60 implica pago100.60
+  e intereses finales4.40. La implementación ya daba ese resultado.
 - **Supuestos que se mantienen:** aniversarios desde C2 sin ajuste hábil ni lag;
   sigma constante hasta reset. No se atribuye al profesor una respuesta que no dio.
 
@@ -75,7 +77,8 @@ La configuración anterior sigue siendo reproducible con
 
 Arrears, segunda sigma y reloj ACT/365 son **contrafactuales de trazabilidad**; no se
 presentan como lecturas contractuales igualmente abiertas tras la segunda respuesta.
-El recorte del objetivo conserva relevancia por la respuesta breve no inequívoca.
+El recorte también queda descartado por la confirmación final. Su fila se conserva
+como contrafactual de trazabilidad; 97.05586514 no es el precio del contrato confirmado.
 Predictor-corrector no demuestra convergencia por refinamiento Browniano. El cambio de
 numeraire se compara con números comunes, sin exigir igualdad por path o de las medias.
 

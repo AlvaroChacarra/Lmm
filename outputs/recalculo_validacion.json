@@ -1,6 +1,6 @@
 {
   "engine": "LibreOfficeDev 26.8.0.0.alpha0 2c87e51eeaa2b413ff4ae097b2705eea1995d8e5",
-  "source_xlsx_sha256": "e8bad3bf12165d9d93da37a173eb2c538fba760518b67fb4dd6160da865cafe0",
+  "source_xlsx_sha256": "cfc3e02d70322f964cbb4f4186fe9d2b2c4f439b5519affa0de3b8fa200802e6",
   "base_config": {
     "terminal": 21,
     "scheme": "log_euler",

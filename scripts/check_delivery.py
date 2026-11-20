@@ -38,6 +38,9 @@ def spanish(x):return f'{x:.4f}'.replace('.',',')
 assert all(spanish(value) in text for value in [r['price'],r['standard_error'],*r['ci95_student']])
 assert 'h=0,5' in text
 assert 'cupones negativos' in text
+assert 'confirma expresamente la opción A' in text
+assert 'como lectura de trabajo' not in text
+assert r['cap_target'] is False
 recalc_file=ROOT/'outputs/recalculo_validacion.json'
 recalc=json.loads(recalc_file.read_text()) if recalc_file.exists() else {}
 recalc_matches=recalc.get('source_xlsx_sha256')==sha256((ROOT/'entrega/Snowblade_LMM.xlsx').read_bytes()).hexdigest()

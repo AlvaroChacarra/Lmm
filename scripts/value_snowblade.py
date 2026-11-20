@@ -44,10 +44,10 @@ def run():
     reconciliation={'previous_config':previous['config'],'previous_price':previous['price'],
                     'new_minus_previous':float(np.mean(pv-previous_pv)),
                     'paired_difference_se':float(np.std(pv-previous_pv,ddof=1)/np.sqrt(len(pv)))}
-    payload={'status':'ESTIMACION_CON_SEGUNDA_ACLARACION_PROFESOR','source_hashes':data.hashes,
+    payload={'status':'ESTIMACION_CON_OPCION_A_CONFIRMADA','source_hashes':data.hashes,
              'change_reconciliation':reconciliation,
              'contract_status':{'fixing':'ADVANCE_CONFIRMED',
-                                'coupon_at_autocall':'FULL_COUPON_WORKING_READING_OF_AMBIGUOUS_CORRECTO',
+                                'coupon_at_autocall':'FULL_COUPON_CONFIRMED_OPTION_A',
                                 'sigma_constant_until_reset':'MINIMAL_MODEL_ASSUMPTION'},
              'professor_clarifications_source':'respuestas aportadas por el usuario; correo sin fecha','versions':{'python':platform.python_version(),
              'numpy':np.__version__,'scipy':scipy.__version__,'openpyxl':openpyxl.__version__},

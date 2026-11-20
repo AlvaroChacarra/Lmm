@@ -1,8 +1,8 @@
-# Validación tras la segunda respuesta del profesor
+# Validación con opción A confirmada
 
-**PASS WITH CONDITIONS** para el caso documentado: h=.5, sigma1 para F1 y spot sin sigma.
-El cupón completo sigue como lectura de trabajo de «Correcto» ante dos alternativas;
-no se convierte una respuesta ambigua en confirmación inequívoca. Calendario sin ajuste
+**PASS para el uso académico y el caso documentado**, con precisión MC limitada:
+h=.5, sigma1 para F1, spot sin sigma y cupón íntegro al autocall confirmado por el
+profesor (opción A). No se ha cambiado el algoritmo ni el precio. Calendario sin ajuste
 y sigma constante hasta reset permanecen como supuestos mínimos explícitos.
 
 El anterior commit 63a681f fue auditado por cinco agentes. Esta actualización no reclama
@@ -38,7 +38,11 @@ marginal para esta parametrización, no prueba de convergencia temporal ni cober
 
 La referencia escalar comparte inputs y convenciones, pero no los kernels de drift,
 payoff, interpolación o PV. Reproduce todas las trayectorias y decisiones de amortización.
-No demuestra que la lectura de «Correcto» sea única; ningún test numérico lo podría hacer.
+La ambigüedad de «Correcto» se cierra por fuente explícita del profesor, no por un test.
+Se ha ejecutado además el fixture de aceptación 3.80+.60: acumulado4.40, cupón.60
+y principal100 en ese pago, sin flujos posteriores. Resultado en professor_option_A del JSON.
+En los 200 paths reales no hay igualdad exacta al4%: los tests > y >= producen las
+mismas cancelaciones. La lectura de alcance del PDF sigue siendo >=.
 
 ## Entregas y recálculo real
 
@@ -92,3 +96,11 @@ El precio actual tiene SE2.74535035 e IC aproximado [92.85545320,103.68287639], 
 cola negativa y solo200paths. No incluye incertidumbre contractual, PCA o discretización.
 La calibración externa de mercado, p-code/VBA y convergencia Browniana no se han auditado.
 No se ha generado ni sustituido ninguna normal o componente principal.
+
+## Cierre de la confirmación final
+
+El objeto base de resultados.json coincide exactamente con el de b5b6b95. Los SHA-256
+de los CSV de los200PV y los4.000flujos también coinciden, comprobados antes/después.
+La opción A no exige recalcular con otro payoff: era el utilizado. Se regeneran las
+entregas para retirar la advertencia contractual ya resuelta y se verifica su recálculo.
+El escenario de recorte permanece solo como contrafactual expresamente descartado.

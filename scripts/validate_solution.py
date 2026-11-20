@@ -10,6 +10,7 @@ from scipy.stats import norm
 from lmm.inputs import load_inputs
 from lmm.model import Config, simulate
 from lmm.valuation import estimate, martingale_checks
+from lmm.payoff import cashflows
 from reference import scalar_reference
 
 if __name__=='__main__':
@@ -36,7 +37,23 @@ if __name__=='__main__':
             caplets.append({'forward':i,'strike':float(strike),'mc_price':float(samples.mean()),
                             'black_price':analytic,'se':se,'z':error/se if se>1e-14 else 0.})
     assert all(abs(c['z'])<5 for c in caplets)
-    record={'base_config':r['config'],'caplet_checks':len(caplets),
+    # Ejemplo confirmado por el profesor: 3.80 acumulados + cupón .60 => 100.60.
+    # Fixings sintéticos solo de prueba, todos dentro del soporte desplazado.
+    fixture=np.zeros((1,20));fixture[0,2]=-.018;fixture[0,4]=.026
+    option_a=cashflows(fixture,np.full(20,.5))
+    np.testing.assert_allclose(option_a.cumulative_paid_fraction[0,3],.038,rtol=0,atol=1e-15)
+    np.testing.assert_allclose(option_a.paid_coupon[0,4],.60,rtol=0,atol=1e-12)
+    np.testing.assert_allclose(option_a.cumulative_paid_fraction[0,4],.044,rtol=0,atol=1e-15)
+    assert option_a.paid_principal[0,4]==100 and option_a.redemption_period[0]==5
+    assert not np.any(option_a.paid_coupon[0,5:])
+    no_equal=np.all(cf.cumulative_paid_fraction[cf.alive_before] != .04)
+    assert no_equal  # En esta muestra >4% y >=4% producen las mismas cancelaciones.
+    record={'professor_option_A':{'prior_interest_per_100':3.80,'full_trigger_coupon_per_100':float(option_a.paid_coupon[0,4]),
+                                  'total_payment_per_100':float(option_a.paid_coupon[0,4]+option_a.paid_principal[0,4]),
+                                  'final_interest_per_100':float(100*option_a.cumulative_paid_fraction[0,4]),
+                                  'redemption_period_fixture':int(option_a.redemption_period[0]),
+                                  'strict_and_inclusive_trigger_equivalent_on_original_paths':bool(no_equal)},
+        'base_config':r['config'],'caplet_checks':len(caplets),
         'caplet_max_abs_z':float(max(abs(c['z']) for c in caplets)),
         'caplet_detail':caplets,'all_200_paths_scalar_reference':{
         'forward_max_abs_error':float(np.max(abs(s.states-ref))),
