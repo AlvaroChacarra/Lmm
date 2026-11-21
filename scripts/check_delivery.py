@@ -14,6 +14,13 @@ from lmm.valuation import estimate
 
 data=load_inputs();s=simulate(data);r,cf,pv,cp,pp=estimate(s)
 w=openpyxl.load_workbook(ROOT/'entrega/Snowblade_LMM.xlsx',read_only=True,data_only=True)
+assert w.sheetnames[:2]==['Resumen','Ejemplo']
+example=np.asarray(list(w['Ejemplo'].iter_rows(min_row=5,max_row=24,max_col=9,values_only=True)),float)
+expected_example=np.column_stack([np.arange(1,21),s.fixings[0],cf.rates[0],s.delta[:20],
+    cf.paid_coupon[0],cf.cumulative_paid_fraction[0],cf.paid_principal[0],s.terminal_bonds[0],
+    (cf.paid_coupon[0]+cf.paid_principal[0])*s.initial_terminal/s.terminal_bonds[0]])
+np.testing.assert_allclose(example,expected_example,rtol=0,atol=1e-12)
+np.testing.assert_allclose(w['Ejemplo']['I26'].value,pv[0],rtol=0,atol=1e-12)
 np.testing.assert_allclose(w['Resumen']['B2'].value,r['price'],rtol=0,atol=1e-12)
 np.testing.assert_allclose(w['Resumen']['B5'].value,r['standard_error'],rtol=0,atol=1e-12)
 actual=np.array([[c.value for c in row[7:28]] for row in w['Estados'].iter_rows(min_row=2)],float)
@@ -29,16 +36,20 @@ error_cells=[f'{sh.title}!{c.coordinate}' for sh in w for row in sh for c in row
 assert not error_cells,error_cells
 w.close()
 f=openpyxl.load_workbook(ROOT/'entrega/Snowblade_LMM.xlsx',read_only=True,data_only=False)
+for i,row in enumerate(f['Calendario'].iter_rows(min_row=3,max_row=22,min_col=8,max_col=10,values_only=True),2):
+    assert row==tuple(f'=PCA!{column}{i}' for column in 'BCD')
 count=sum(c.data_type=='f' for sh in f for row in sh for c in row)
 f.close()
 pdf=PdfReader(ROOT/'entrega/Memoria_Snowblade.pdf')
 text='\n'.join(p.extract_text() for p in pdf.pages)
-assert len(pdf.pages)==5
+assert len(pdf.pages)==7
 def spanish(x):return f'{x:.4f}'.replace('.',',')
 assert all(spanish(value) in text for value in [r['price'],r['standard_error'],*r['ci95_student']])
 assert 'h=0,5' in text
 assert 'cupones negativos' in text
-assert 'confirma expresamente la opción A' in text
+assert 'cupón íntegro' in text and 'Ejemplo!I26' in text
+assert spanish(pv[0]) in text
+assert all(spanish(v) in text for v in [cp[0], pp[0], cf.paid_coupon[0,2], cf.paid_coupon[0,4]])
 assert 'como lectura de trabajo' not in text
 assert r['cap_target'] is False
 recalc_file=ROOT/'outputs/recalculo_validacion.json'

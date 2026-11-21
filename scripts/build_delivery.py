@@ -3,24 +3,17 @@ import json
 from datetime import datetime
 from pathlib import Path
 import sys
-from functools import partial
 from datetime import timedelta
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 import numpy as np
 import xlsxwriter
 from xlsxwriter.utility import xl_rowcol_to_cell as cell
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from academic_report import pdf
 from lmm.inputs import load_inputs
 from lmm.model import simulate, drift
 from lmm.valuation import estimate
 from lmm.payoff import SPREADS
-from reportlab.pdfgen.canvas import Canvas
 
 
 def excel(data,s,payload,cf):
@@ -37,25 +30,27 @@ def excel(data,s,payload,cf):
     money=w.add_format({'num_format':'0.0000'})
     title=w.add_format({'bold':True,'font_size':16,'font_color':'#143C60'})
     text=w.add_format({'text_wrap':True,'valign':'top'})
+    order=['Resumen','Ejemplo','Paths','Flujos','Estados','Parametros','Calendario',
+           'Covarianza','Curva','Volatilidades','PCA','Aleatorios']
+    sheets={name:w.add_worksheet(name) for name in order}
     def sheet(name,head,width=18):
-        sh=w.add_worksheet(name);sh.freeze_panes(1,2);sh.set_row(0,32);sh.write_row(0,0,head,hdr)
-        sh.set_column(0,len(head)-1,width);sh.autofilter(0,0,1,len(head)-1)
+        sh=sheets[name];sh.freeze_panes(1,2);sh.set_row(0,32);sh.write_row(0,0,head,hdr)
+        sh.set_column(0,len(head)-1,width)
         return sh
-    notes=w.add_worksheet('Guia');notes.set_column('A:A',28);notes.set_column('B:B',100)
-    notes.write('A1','SNOWBLADE · LMM',title)
-    lines=[('Estado','Resolución académica validada con 200 paths y opción A confirmada. Precisión MC limitada; supuestos de modelo explícitos.'),
-           ('Fuente contractual','PDF AFI más aclaraciones del profesor aportadas por el usuario; ver docs/ACLARACIONES_PROFESOR.md.'),
-           ('Contrato confirmado','Tasas anualizadas ACT/365; no floor; memoria del cupón negativo; objetivo de intereses efectivos netos del 4%.'),
-           ('Aclaraciones y supuestos','Fixing advance confirmado; difusión h=0,5; sigma 1 para F1 (spot sin sigma). Opción A confirmada: cupón íntegro sin recorte más nominal al autocall; sigma constante y calendario sin ajuste: supuestos.'),
-           ('Lectura','Resumen -> Parametros/Calendario -> Aleatorios/PCA/Covarianza -> Estados -> Flujos -> Paths.'),
-           ('Fórmulas','Estados implementa log-Euler terminal con drift dependiente de forwards. Flujos calcula cupones, objetivo y bono terminal. Paths y Resumen agregan.'),
-           ('Cachés y recálculo','Cada fórmula incluye resultado cacheado de Python. Verificación adicional por recálculo forzado con LibreOffice y control centinela: scripts/recalculate_delivery.py. No probado en Microsoft Excel.'),
-           ('Limitación de cambios','Las fórmulas del caso base son editables. Calendario y nodos de interpolación están fijados para este caso; al cambiar fechas, dimensiones o escenarios, regenerar desde Python.'),
-           ('Moneda y medida','Valor por 100 de nominal; probabilidades y vida media bajo medida del bono terminal, no previsiones físicas.'),
-           ('Originales','Libro nuevo XLSX sin macros; no contiene VBA ni afirma conservarlo. Los originales siguen en data/original/.'),
-           ('Reproducción','python scripts/value_snowblade.py; python scripts/validate_solution.py; python scripts/build_delivery.py'),
-           ('Excel original SHA-256',data.hashes['2026_Datos.xlsm']),('PDF original SHA-256',data.hashes['2026_Ejercicio.pdf'])]
-    for r,(a,b) in enumerate(lines,2):notes.write(r,0,a);notes.write(r,1,b,text);notes.set_row(r,42)
+    summary=sheet('Resumen',['Snowblade · valoración','Resultado'],28)
+    example=sheets['Ejemplo']
+    for sh in (summary, example):
+        sh.set_tab_color('#08796E')
+    summary.set_column('A:A',33)
+    summary.set_column('B:B',18)
+    summary.set_column('C:C',13)
+    summary.set_column('D:D',4)
+    summary.set_column('E:E',46)
+    summary.freeze_panes(0,0)
+    highlight=w.add_format({'num_format':'0.00','font_size':16,'bold':True,'font_color':'#08796E'})
+    frequency=w.add_format({'num_format':'0.0%'})
+    amount=w.add_format({'num_format':'0.00'})
+    input_pct=w.add_format({'font_color':'#18568A','num_format':'0.00%'})
     params=sheet('Parametros',['Parametro','Valor'],30)
     for r,entry in enumerate([('Nominal',100.),('Shift',data.shift),('Objetivo efectivo neto',.04),('P(0,T*)',s.initial_terminal),('Paths',200),('Cupones iniciales anualizados',.01),('h difusion 30/360',data.dt_template)],1):params.write_row(r,0,entry)
     curve=sheet('Curva',['Dias desde origen','Fecha','Descuento'],22)
@@ -78,7 +73,11 @@ def excel(data,s,payload,cf):
                 cal.write_number(r,6,0,pct)  # Spot conocido, no consume sigma.
             else:
                 cal.write_formula(r,6,f'=Volatilidades!B{i+1}',pct,data.vols[i-1])
-            cal.write_row(r,7,[0.,0.,0.] if i==0 else data.loadings[i-1],num)
+            if i==0:
+                cal.write_row(r,7,[0.,0.,0.],num)
+            else:
+                for k, loading in enumerate(data.loadings[i-1]):
+                    cal.write_formula(r,7+k,'=PCA!'+cell(i,k+1),num,loading)
             if i<20:cal.write_number(r,10,float(SPREADS[i]),pct)
     # Link terminal factor instead of a copied parameter.
     params.write_formula('B5','=Calendario!E23',num,s.initial_terminal)
@@ -156,18 +155,17 @@ def excel(data,s,payload,cf):
         paths.write_formula(r,4,f'=SUMPRODUCT(Flujos!B{first}:B{last},Flujos!K{first}:K{last})/Parametros!$B$2',num,int(cf.redemption_period[p]))
         paths.write_formula(r,5,f'=INDEX(Calendario!C2:C23,E{r+1}+1)/365',num,s.days[cf.redemption_period[p]]/365)
         paths.write_formula(r,6,f'=SUM(Flujos!J{first}:J{last})',None,int(cf.call_event[p].any()))
-    summary=sheet('Resumen',['Metrica','Valor'],36)
     for r,(label,formula,value) in enumerate([
         ('PV del nominal introducido','=AVERAGE(Paths!D2:D201)',report['price']),
         ('PV cupones','=AVERAGE(Paths!B2:B201)',report['coupon_pv']),
         ('PV principal','=AVERAGE(Paths!C2:C201)',report['principal_pv']),
-        ('Error estandar','=STDEV(Paths!D2:D201)/SQRT(200)',report['standard_error']),
+        ('Error estándar','=STDEV(Paths!D2:D201)/SQRT(COUNT(Paths!D2:D201))',report['standard_error']),
         ('IC 95% aprox inferior','=B2-TINV(0.05,199)*B5',report['ci95_student'][0]),
         ('IC 95% aprox superior','=B2+TINV(0.05,199)*B5',report['ci95_student'][1]),
-        ('Vida media años Q*','=AVERAGE(Paths!F2:F201)',report['expected_life_years_Q_terminal']),
+        ('Vida media bajo Q* (años)','=AVERAGE(Paths!F2:F201)',report['expected_life_years_Q_terminal']),
         ('Supervivencia sin autocall Q*','=1-AVERAGE(Paths!G2:G201)',report['maturity_no_call_probability_Q_terminal'])],1):
-        summary.write(r,0,label);summary.write_formula(r,1,formula,money,value)
-    summary.write(11,0,'IC aproximado: solo error MC; no incluye PCA, malla o convenciones.',text)
+        summary.write(r,0,label);summary.write_formula(r,1,formula,highlight if r==1 else frequency if r==8 else amount,value)
+    summary.write(11,0,'Autocancelaciones por semestre',hdr)
     summary.set_row(11,48)
     summary.write_row(13,0,['Periodo','Probabilidad Q*','Recuento'],hdr)
     for period, count in enumerate(report['autocall_counts'], 1):
@@ -178,95 +176,68 @@ def excel(data,s,payload,cf):
                               f'=COUNTIFS(Paths!$E$2:$E$201,A{address},Paths!$G$2:$G$201,1)',
                               None, count)
         summary.write_formula(row, 1, f'=C{address}/COUNT(Paths!$A$2:$A$201)',
-                              pct, count / len(pv))
-    scenarios=sheet('Sensibilidades',['Escenario','Precio','Diferencia base','SE diferencia pareada'],35)
-    for r,(name,rep) in enumerate(payload['sensitivities'].items(),1):scenarios.write_row(r,0,[name,rep['price'],rep['paired_difference_to_base'],rep['paired_difference_se']])
+                              frequency, count / len(pv))
+    summary.set_row(1,26)
+    summary.write('E1','Cómo leer la valoración',hdr)
+    for row, value in [(1,'Precio = media de los 200 valores presentes.'),
+                       (5,'El intervalo refleja el error de muestreo.'),
+                       (8,'Q* es la medida del bono terminal.'),
+                       (11,'Flujos recoge los pagos de cada trayectoria.'),
+                       (14,'Fechas y muestra fijas según la plantilla.')]:
+        summary.write(row,4,value,text)
+        summary.set_row(row,24)
+    summary.write('E4','Nominal usado en la valoración')
+    summary.write_formula('F4','=Parametros!B2',amount,100)
+    summary.set_column('F:F',11)
+    summary.write('E7','IC del 95% · muestra de 200 trayectorias')
+    summary.write_url('E11',"internal:'Ejemplo'!A1",string='Abrir la trayectoria 1')
+    summary.print_area('A1:F34')
+    summary.set_paper(9)
+    example.set_column('A:A',10)
+    example.set_column('B:H',13)
+    example.set_column('I:I',14)
+    example.merge_range('A1:I1','Trayectoria 1 · del Euribor al valor presente',title)
+    example.set_row(0,26)
+    example.merge_range('A2:I2','Importes en unidades monetarias. Las tasas son anuales. El acumulado se expresa sobre nominal.',text)
+    example.set_row(1,22)
+    headers=['Semestre','Euribor fijado','Tasa anual','ACT/365','Cupón pagado','Acumulado','Principal','Bono terminal','PV del flujo']
+    example.write_row('A4',headers,hdr)
+    example.set_row(3,32)
+    for j in range(20):
+        values=[j+1,s.fixings[0,j],cf.rates[0,j],s.delta[j],cf.paid_coupon[0,j],
+                cf.cumulative_paid_fraction[0,j],cf.paid_principal[0,j],s.terminal_bonds[0,j],
+                (cf.paid_coupon[0,j]+cf.paid_principal[0,j])*s.initial_terminal/s.terminal_bonds[0,j]]
+        for k,(col,fmt,val) in enumerate(zip('BDEFHIKLO',
+                                       [None,pct,pct,num,money,pct,money,num,money],values)):
+            example.write_formula(4+j,k,f'=Flujos!{col}{j+2}',fmt,val)
+    example.write('H26','PV total',hdr)
+    example.write_formula('I26','=SUM(I5:I24)',highlight,pv[0])
+    example.set_row(25,25)
+    example.conditional_format('A5:I24',{'type':'formula','criteria':'=$G5>0',
+                               'format':w.add_format({'bold':True,'bg_color':'#DDEFEA'})})
+    example.conditional_format('A5:I24',{'type':'formula','criteria':'=SUM($G$5:$G5)>$G5',
+                               'format':w.add_format({'font_color':'#657783','bg_color':'#F3F6F6'})})
+    example.write_url('A28',"internal:'Flujos'!A2",string='Detalle en Flujos')
+    example.write_url('E28',"internal:'Paths'!D2",string='Contraste en Paths')
+    example.freeze_panes(4,1)
+    example.print_area('A1:I28')
+    for sh, last, cols in [(st,4200,49),(flows,4000,15),(paths,200,7),(rnd,12000,4)]:
+        sh.autofilter(0,0,last,cols-1)
+    volsheet.set_column('B:B',21,input_pct)
+    params.write('B3',data.shift,input_pct)
+    params.write('B4',0.04,input_pct)
+    params.write('B7',0.01,input_pct)
+    params.write('C1','Uso',hdr)
+    params.set_column('C:C',55)
+    params.write('C6','Dimensión fija de la muestra suministrada')
+    params.write('C8','Paso de simulación. El pago usa el ACT/365 de Calendario.')
     for sh in w.worksheets():
-        sh.set_landscape();sh.fit_to_pages(1,0);sh.repeat_rows(0)
+        sh.hide_gridlines(2);sh.set_landscape();sh.fit_to_pages(1,0);sh.repeat_rows(0)
+    for sh in (summary,example):
+        sh.set_paper(9);sh.fit_to_pages(1,1);sh.center_horizontally()
     w.close()
     return dest
 
-
-def pdf(data,s,payload):
-    font='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
-    bold='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
-    pdfmetrics.registerFont(TTFont('DV',font));pdfmetrics.registerFont(TTFont('DV-Bold',bold))
-    styles=getSampleStyleSheet()
-    for name in ['Normal','BodyText','Heading1','Heading2','Title']:
-        styles[name].fontName='DV';styles[name].leading=14
-    styles['Normal'].fontSize=9;styles['BodyText'].fontSize=9
-    styles['Title'].fontSize=23;styles['Title'].leading=29;styles['Title'].textColor=colors.HexColor('#143C60')
-    styles['Heading1'].fontSize=16;styles['Heading1'].leading=21
-    styles['Heading2'].fontSize=11;styles['Heading2'].leading=16
-    story=[]
-    def p(t,style='BodyText'):story.append(Paragraph(t,styles[style]));story.append(Spacer(1,7))
-    def table(rows,widths=None):
-        t=Table([[Paragraph(str(x),styles['Normal']) for x in row] for row in rows],colWidths=widths,repeatRows=1,hAlign='LEFT')
-        t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#E4EDF5')),('FONTNAME',(0,0),(-1,0),'DV-Bold'),('VALIGN',(0,0),(-1,-1),'TOP'),('BOTTOMPADDING',(0,0),(-1,-1),7),('TOPPADDING',(0,0),(-1,-1),5),('LINEBELOW',(0,0),(-1,0),.6,colors.HexColor('#143C60')),('LINEBELOW',(0,1),(-1,-1),.25,colors.lightgrey)]))
-        story.append(t);story.append(Spacer(1,12))
-    r=payload['base'];f=lambda x:f'{x:,.4f}'.replace(',','X').replace('.',',').replace('X','.')
-    p('Snowblade bajo LMM','Title');p('Valoración Monte Carlo · 200 trayectorias originales · AFI','Heading2')
-    p('Solución validada para el ejercicio con opción A confirmada. La precisión estadística sigue limitada por los 200 paths.')
-    table([['Magnitud por 100 de nominal','Resultado'],['Precio',f(r['price'])],['PV de cupones',f(r['coupon_pv'])],['PV del principal',f(r['principal_pv'])],['Error estándar Monte Carlo',f(r['standard_error'])],['IC 95% aproximado (Student, 199 g.l.)',f(r['ci95_student'][0])+' a '+f(r['ci95_student'][1])],['Vida media bajo Q terminal',f(r['expected_life_years_Q_terminal'])+' años'],['Llegada a vencimiento sin autocall',f"{r['maturity_no_call_count']} / {r['paths']} = {100*r['maturity_no_call_probability_Q_terminal']:.1f}%"]],[300,180])
-    p('Qué explica el resultado','Heading2')
-    p('La curva inicial contiene tipos negativos. Muchas trayectorias autocancelan pronto con cupones positivos. Otras permanecen vivas y, al subir Euribor, acumulan cupones negativos: el inversor debe pagarlos. Esas pérdidas forman parte del contrato confirmado, no son errores que puedan eliminarse.')
-    p(f"Hay {r['negative_coupon_paths']} trayectorias con algún cupón negativo y {r['negative_pv_paths']} con PV neto negativo. La trayectoria {r['worst_path_id']} vale {f(r['min_path_pv'])} por 100 de nominal. El intervalo estadístico es orientativo: la muestra es pequeña y asimétrica; no engloba riesgo de PCA, discretización o convenciones.")
-    p('Recomendación','Heading2');p('Presentar '+f(r['price'])+' como estimación del caso documentado, acompañada de error estándar e hipótesis. Mantener los 200 paths exigidos y no recentrar ni sustituir los shocks. No expresar céntimos como precisión estadística.')
-    story.append(PageBreak())
-    p('1. Contrato y convenciones','Heading1')
-    p('El profesor confirma mediante sus respuestas aportadas por el usuario: (i) no hay suelo cero, el inversor paga los cupones negativos y la recursión conserva ese valor; (ii) el objetivo del 4% suma intereses reales acumulados; (iii) el 1% inicial es anualizado y se devenga con ACT/365.')
-    table([['Periodo j','Tasa anual c<sub>j</sub>'],['1–2','1%'],['3–4','c<sub>j−1</sub> − r<sub>j</sub>'],['5–8','c<sub>j−1</sub> + 1% − r<sub>j</sub>'],['9–12','c<sub>j−1</sub> + 1,25% − r<sub>j</sub>'],['13–16','c<sub>j−1</sub> + 1,50% − r<sub>j</sub>'],['17–20','c<sub>j−1</sub> + 2% − r<sub>j</sub>']],[100,380])
-    p('Pago del cupón: H δ<sub>j−1</sub> c<sub>j</sub>. Acumulado: S<sub>m</sub> = Σ<sub>j≤m</sub> δ<sub>j−1</sub> c<sub>j</sub>. Primer cruce S<sub>m</sub> ≥ 0,04: cupón completo y devolución de H; se suprimen todos los pagos posteriores. Si no cruza, H se devuelve en el periodo 20. Los intereses negativos reducen el acumulado.')
-    p('La respuesta final del profesor confirma expresamente la opción A: no se capa el último cupón. Con nominal 100, intereses acumulados de 3,80 y cupón de 0,60, se pagan 100,60 y los intereses terminan en 4,40. Coincide con el caso base ya calculado; el precio permanece sin cambios.')
-    p('Calendario adoptado','Heading2')
-    p('Origen 26/01/2022; pagos cada seis meses calendario, sin ajuste hábil, hasta 26/01/2032. Primer devengo 181/365; segundo 184/365. Fixing advance al inicio de cada periodo. Bono terminal auxiliar a 26/07/2032. El semestre auxiliar no añade cupón. El índice F₀ representa el spot inicial conocido, sin volatilidad. F₁…F₂₀ usan las primeras veinte sigmas; la fila 21 se conserva pero no se usa.')
-    p('P(0,t₂₀)=0,9796669786; P(0,t₂₁)=0,9738424984. El profesor permite elegir el vencimiento terminal: en valoración exacta es un cambio de numerario, con drift y descuento consistentes. La muestra finita puede dar diferencias. Las sensibilidades están en la sección 4.')
-    story.append(PageBreak())
-    p('2. Datos, dinámica y descuento','Heading1')
-    p('Curva: 70 factores de descuento originales, interpolación log-lineal equivalente al modo 0 de CInterPol. Forwards: F<sub>i</sub>(0) = [P(0,t<sub>i</sub>)/P(0,t<sub>i+1</sub>) − 1]/δ<sub>i</sub>, con δ<sub>i</sub>=días(t<sub>i+1</sub>−t<sub>i</sub>)/365.')
-    p('Se conservan las cargas A de Correlaciones!G117:I136 y los 12.000 números de Aleatorios. El tensor Z tiene dimensiones factor × paso × path = 3×20×200. No hay nuevas semillas, antitéticas, recentrado ni PCA recalculada en el caso base.')
-    p('Modelo bajo Q terminal','Heading2')
-    p('X<sub>i</sub> = F<sub>i</sub> + s, con s=0,03; λ<sub>i</sub>=σ<sub>i</sub>a<sub>i</sub>. Se adopta σ<sub>i</sub> constante hasta reset (parametrización mínima). Para i=1…20 se usa Curva y volas!F(8+i): F9 para F₁, F28 para F₂₀. F29 queda extra; el spot inicial no consume una sigma.')
-    p('dX<sub>i</sub>/X<sub>i</sub> = μ<sub>i</sub>dt + λ<sub>i</sub>·dW<sup>21</sup>')
-    p('μ<sub>i</sub> = −Σ<sub>j=i+1…20</sub> {δ<sub>j</sub>(F<sub>j</sub>+s)/(1+δ<sub>j</sub>F<sub>j</sub>)} (λ<sub>i</sub>·λ<sub>j</sub>)')
-    p('El numerador contiene F+s y el denominador F sin desplazar. La suma del último forward es vacía: μ₂₀=0. Drift y difusión emplean la misma covarianza efectiva A Aᵀ. Las cargas finales ya son unitarias por fila: no se multiplican de nuevo por raíces de autovalores.')
-    p('Paso log-Euler: X<sub>i</sub>(t+h) = X<sub>i</sub>(t) exp[(μ<sub>i</sub> − ||λ<sub>i</sub>||²/2)h + √h λ<sub>i</sub>·Z]. Solo evolucionan tipos vivos; todos los drifts se calculan con el mismo estado anterior. h=0,5 por semestre (partición 30/360 indicada por el profesor). Los devengos δ de cupones y forwards siguen en ACT/365. Se comprueba X&gt;0 y 1+δF&gt;0 sin clipping.')
-    p('Descuento por numerario','Heading2')
-    p('B(t<sub>m</sub>) = P(t<sub>m</sub>,t₂₁) = ∏<sub>j=m…20</sub>(1+δ<sub>j</sub>F<sub>j</sub>(t<sub>m</sub>))<sup>−1</sup>')
-    p('PV<sub>p</sub> = P(0,t₂₁) Σ<sub>m=1…20</sub> CF<sub>p,m</sub>/B<sub>p</sub>(t<sub>m</sub>); precio = media de los 200 PV<sub>p</sub>.')
-    p('En el último pago queda el factor F₂₀; el producto no es vacío. El bono terminal vale 1 solo en t₂₁. No se sustituye el descuento estocástico por la curva inicial. El error estándar se calcula sobre trayectorias completas, no sobre los 4.000 registros de pago.')
-    story.append(PageBreak())
-    p('3. Resultados y riesgo de cola','Heading1')
-    rows=[['Periodo de autocall','Recuento / 200','Probabilidad Q terminal']]
-    for j,c in enumerate(r['autocall_counts'],1):
-        if c:rows.append([str(j),str(c),str(round(c/2,2))+'%'])
-    rows.append(['Vencimiento sin autocall',str(r['maturity_no_call_count']),f"{100*r['maturity_no_call_probability_Q_terminal']:.1f}%"])
-    table(rows,[160,140,180])
-    p(f"El {100*sum(r['autocall_probabilities_Q_terminal'][:5]):.1f}% cancela hasta el periodo 5 y el {100*sum(r['autocall_probabilities_Q_terminal'][:6]):.1f}% hasta el periodo 6. Las frecuencias y la vida media de {f(r['expected_life_years_Q_terminal'])} años se estiman bajo la medida terminal; no son probabilidades físicas.")
-    p(f"La mediana de los PV es {f(r['median_path_pv'])}, superior a la media {f(r['price'])} por la cola negativa. Quitar el path {r['worst_path_id']} subiría la media a {f(r['mean_excluding_worst_influence_only'])}: diagnóstico de influencia, no estimación alternativa admisible. La muestra original se conserva completa.")
-    p('La protección del principal significa devolución de 100 en la fecha de amortización, no protección del conjunto de pagos de cupones. Sin floor ni límite de responsabilidad indicado, los pagos negativos pueden superar el nominal. Eso explica los PV netos negativos.')
-    p('El caso sin volatilidad vale 105,3566 y cancela en el periodo 5. Sirve para verificar algebraicamente los flujos y el descuento; no reemplaza al precio estocástico.')
-    story.append(PageBreak())
-    p('4. Validación, sensibilidades y reproducción','Heading1')
-    p('19 tests superados: integridad y rechazo de corrupción, interpolación, forwards, drift/shift, último forward, congelación al reset, caso σ=0, memoria negativa, objetivo, amortización única y referencia escalar de todos los paths. Máxima diferencia de PV frente a esa referencia: 2,84×10⁻¹³; σ=0 frente a descuento directo: 7,11×10⁻¹⁴.')
-    p('230 diagnósticos de martingalas de cocientes de bonos quedan dentro de cinco errores estándar; máximo |z|=2,026. Son controles con tolerancia MC, no una demostración de ausencia de sesgo de discretización ni de convergencia.')
-    names={'predictor_corrector':'Predictor-corrector','act365_diffusion_counterfactual':'Reloj ACT/365 (contrafactual)','terminal_10_years':'Bono terminal a 10 años','second_vol_row_counterfactual':'Sigma desde segunda fila (anterior)','zero_volatility':'Sin volatilidad','coupon_capped_at_target_not_base':'Recorte (descartado por profesor)','arrears_counterfactual':'Arrears (descartado por profesor)'}
-    table([['Escenario','Precio','Δ base','SE pareado']]+[[names[n],f(a['price']),f(a['paired_difference_to_base']),f(a['paired_difference_se'])] for n,a in payload['sensitivities'].items()],[210,90,90,90])
-    p('Predictor-corrector comparte los mismos shocks: detecta sensibilidad del drift, no refina el Browniano ni acredita convergencia temporal. h=0,5 y primera sigma para F₁ son ahora el caso base indicado por el profesor. Las variantes de reloj ACT/365, segunda sigma, arrears y cupón recortado son contrafactuales de trazabilidad, no opciones abiertas del contrato confirmado. Cambiar el bono terminal cambia también medida y dimensión; la diferencia con ruido común es orientativa.')
-    p('La PCA suministrada es aproximada: error máximo de R frente a A Aᵀ de 0,1535. Se conserva por exigencia del ejercicio. Su riesgo no forma parte del intervalo estadístico. Calendario sin ajuste y sigma constante son supuestos mínimos documentados. La opción A cierra la duda del exceso; no se atribuye a la respuesta anterior una selección que todavía no contenía. No se cambia ACT/365 del cupón por 30/360.')
-    p('Reproducción y entregables','Heading2')
-    for command in ['python scripts/value_snowblade.py','PYTHONPATH=src python -m unittest discover -s tests -v','python scripts/validate_solution.py','python scripts/build_delivery.py']:
-        p(command)
-    p('El XLSX es un libro nuevo sin VBA, con fórmulas y resultados cacheados reconciliados con Python. El protocolo reproducible de entrega fuerza recálculo con LibreOffice y comprueba centinelas; ver outputs/recalculo_validacion.json. Microsoft Excel no probado. Los dos originales conservan sus SHA-256; ver outputs/resultados.json y outputs/validacion.json. Código, decisiones y trazabilidad completa en el repositorio.')
-    while story and isinstance(story[-1],Spacer):
-        story.pop()
-    dest=ROOT/'entrega/Memoria_Snowblade.pdf'
-    def footer(canvas,doc):
-        canvas.setFont('DV',8);canvas.setFillColor(colors.grey)
-        canvas.drawString(42,25,'Snowblade · LMM terminal · 200 paths originales')
-        canvas.drawRightString(A4[0]-42,25,str(doc.page))
-    SimpleDocTemplate(str(dest),pagesize=A4,rightMargin=42,leftMargin=42,topMargin=40,bottomMargin=42,title='Snowblade LMM - Memoria de valoración',author='Proyecto LMM').build(story,onFirstPage=footer,onLaterPages=footer,canvasmaker=partial(Canvas,invariant=1))
-    return dest
 
 if __name__=='__main__':
     data=load_inputs();s=simulate(data);_,cf,_,_,_=estimate(s)

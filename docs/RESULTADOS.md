@@ -59,5 +59,5 @@ que llevaron al estado final se explican una sola vez en [DECISIONES](DECISIONES
 | [entrega_validacion.json](../outputs/entrega_validacion.json) | Relectura y reconciliación de Excel/PDF contra Python |
 
 La [validación](VALIDACION.md) distingue cachés de ejecución real. El libro es nuevo,
-sin VBA, y sus tablas de escenarios son estáticas. Para regenerar cálculo y entregas,
+sin VBA. La hoja Ejemplo enlaza los flujos del primer path y las sensibilidades se conservan en el JSON. Para regenerar cálculo y entregas,
 seguir el orden de [README](../README.md); los originales permanecen inmutables.
