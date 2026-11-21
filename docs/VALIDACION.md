@@ -1,9 +1,7 @@
 # Evidencia de validación y alcance
 
 **PASS para el uso académico del caso documentado**, con precisión MC limitada y los
-supuestos mínimos de [DECISIONES](DECISIONES.md). Cálculo y entregas finales se validaron
-antes de esta consolidación documental; la limpieza preserva sus bytes y parámetros.
-Comandos de verificación y regeneración: [README](../README.md).
+supuestos mínimos de [DECISIONES](DECISIONES.md). Comandos de verificación y regeneración: [README](../README.md).
 
 ## Código, contrato y estimador
 
@@ -36,11 +34,11 @@ producen las mismas cancelaciones de la muestra; el test del enunciado es de alc
 
 ## Recálculo de las entregas
 
-El XLSX contiene **195.934 fórmulas**. Se reconcilian 88.200 estados, 4.000 registros de
+El XLSX contiene **195.974 fórmulas**. Se reconcilian 88.200 estados, 4.000 registros de
 flujos y 200 PV, además de las cifras del resumen y el PDF de cinco páginas.
 
-El script de recálculo trabaja solo en copias temporales. Motor observado:
-LibreOfficeDev 26.8, build `2c87e51eeaa2b413ff4ae097b2705eea1995d8e5`.
+El script de recálculo trabaja con copias temporales en LibreOffice. El certificado
+registra la versión del motor junto al hash del libro comprobado.
 
 1. Sustituye todos los resultados guardados de fórmulas por un centinela.
 2. Un perfil que no recalcula los conserva: control negativo de que abrir/guardar no
@@ -48,8 +46,11 @@ LibreOfficeDev 26.8, build `2c87e51eeaa2b413ff4ae097b2705eea1995d8e5`.
 3. Con OOXMLRecalcMode=0 se sustituyen todos, sin celdas de error. Desvío máximo frente
    a los valores auténticos: 1,5916157281e-12; precio 98,2691647949938.
 4. Con las sigmas a cero y cachés adulteradas, el motor calcula 105,35659626163304 y
-   amortización en periodo 5 en todos los paths, coincidiendo con la referencia.
-5. Conserva el hash del XLSX de origen y de los originales contractuales.
+   la tabla de `Resumen` registra 200 autocancelaciones (100 %) en el quinto periodo
+   y cero en los otros 19. El recuento exige el indicador de autocall de `Paths`.
+5. Al cambiar solo el nominal de 100 a 200, «PV del nominal introducido» pasa de
+   98,269164795 a 196,538329590.
+6. Conserva el hash del XLSX de origen y de los originales contractuales.
 
 El [certificado](../outputs/recalculo_validacion.json) se liga al hash del libro:
 [check_delivery.py](../scripts/check_delivery.py) no acepta como vigente un certificado

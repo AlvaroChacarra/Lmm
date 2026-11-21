@@ -158,7 +158,7 @@ def excel(data,s,payload,cf):
         paths.write_formula(r,6,f'=SUM(Flujos!J{first}:J{last})',None,int(cf.call_event[p].any()))
     summary=sheet('Resumen',['Metrica','Valor'],36)
     for r,(label,formula,value) in enumerate([
-        ('Precio por 100','=AVERAGE(Paths!D2:D201)',report['price']),
+        ('PV del nominal introducido','=AVERAGE(Paths!D2:D201)',report['price']),
         ('PV cupones','=AVERAGE(Paths!B2:B201)',report['coupon_pv']),
         ('PV principal','=AVERAGE(Paths!C2:C201)',report['principal_pv']),
         ('Error estandar','=STDEV(Paths!D2:D201)/SQRT(200)',report['standard_error']),
@@ -170,7 +170,15 @@ def excel(data,s,payload,cf):
     summary.write(11,0,'IC aproximado: solo error MC; no incluye PCA, malla o convenciones.',text)
     summary.set_row(11,48)
     summary.write_row(13,0,['Periodo','Probabilidad Q*','Recuento'],hdr)
-    for j,count in enumerate(report['autocall_counts'],14):summary.write_row(j,0,[j-13,count/200,count])
+    for period, count in enumerate(report['autocall_counts'], 1):
+        row = 13 + period
+        address = row + 1
+        summary.write_number(row, 0, period)
+        summary.write_formula(row, 2,
+                              f'=COUNTIFS(Paths!$E$2:$E$201,A{address},Paths!$G$2:$G$201,1)',
+                              None, count)
+        summary.write_formula(row, 1, f'=C{address}/COUNT(Paths!$A$2:$A$201)',
+                              pct, count / len(pv))
     scenarios=sheet('Sensibilidades',['Escenario','Precio','Diferencia base','SE diferencia pareada'],35)
     for r,(name,rep) in enumerate(payload['sensitivities'].items(),1):scenarios.write_row(r,0,[name,rep['price'],rep['paired_difference_to_base'],rep['paired_difference_se']])
     for sh in w.worksheets():
