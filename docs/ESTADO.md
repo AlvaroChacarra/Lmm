@@ -8,6 +8,8 @@ estándar 2,74535035. El resultado completo y su interpretación pertenecen a
 
 Originales íntegros, motor reproducible con 200 paths, 19 tests, referencia escalar,
 contraste con 60 caplets, 230 controles de bonos, CSV/JSON y entregas Excel/PDF.
+La [guía pedagógica](Guia_pedagogica_Snowblade_LMM.pdf) acompaña la solución para
+su estudio y defensa.
 El Excel está comprobado por recálculo real en LibreOffice con centinelas y sigma=0.
 
 Las aclaraciones materiales están cerradas: tasas anuales ACT/365, memoria negativa

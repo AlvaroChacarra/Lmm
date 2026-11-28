@@ -104,7 +104,7 @@ def audit(executable):
         zero_book=recalc(executable,zero_copy,temp/'zero',temp/'profile_zero',0)
         w=openpyxl.load_workbook(zero_book,read_only=True,data_only=True)
         np.testing.assert_allclose(w['Resumen']['B2'].value,zr['price'],rtol=0,atol=1e-10)
-        distribution = list(w['Resumen'].iter_rows(min_row=15, max_row=34, max_col=3, values_only=True))
+        distribution = list(w['Paths'].iter_rows(min_row=2, max_row=21, min_col=9, max_col=11, values_only=True))
         expected_counts = zr['autocall_counts']
         np.testing.assert_array_equal(distribution, [
             (period, count / len(zpv), count) for period, count in enumerate(expected_counts, 1)

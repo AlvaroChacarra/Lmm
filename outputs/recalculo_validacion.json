@@ -1,6 +1,6 @@
 {
-  "engine": "LibreOffice 25.2.3.2 520(Build:2)",
-  "source_xlsx_sha256": "01f067491e92ccd9b7c1d710cebcf67c0643168a4ad77c5fb738667985436b1b",
+  "engine": "LibreOfficeDev 26.8.0.0.alpha0 2c87e51eeaa2b413ff4ae097b2705eea1995d8e5",
+  "source_xlsx_sha256": "b1077374de2ce5d30a6498fdf1d775ab6688435511a73b8e222a4b8f4fc8770d",
   "base_config": {
     "terminal": 21,
     "scheme": "log_euler",
@@ -8,8 +8,8 @@
     "vol_offset": 0,
     "vol_scale": 1.0
   },
-  "formula_count": 195974,
-  "negative_control_preserved_sentinels": 195974,
+  "formula_count": 196218,
+  "negative_control_preserved_sentinels": 196218,
   "forced_remaining_sentinels": 0,
   "forced_error_cells": [],
   "max_formula_cache_difference": 1.5916157281026244e-12,

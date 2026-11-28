@@ -34,8 +34,7 @@ producen las mismas cancelaciones de la muestra; el test del enunciado es de alc
 
 ## Recálculo de las entregas
 
-El XLSX contiene **195.974 fórmulas**. Se reconcilian 88.200 estados, 4.000 registros de
-flujos y 200 PV, además de las cifras del resumen y el PDF de cinco páginas.
+Se reconcilian 88.200 estados, 4.000 registros de flujos y 200 PV. La comprobación incluye la trayectoria comentada, sus enlaces PCA, Resumen y las cifras del PDF de cinco páginas. El conteo de fórmulas y el desvío máximo del recálculo corresponden al archivo exacto identificado en el certificado.
 
 El script de recálculo trabaja con copias temporales en LibreOffice. El certificado
 registra la versión del motor junto al hash del libro comprobado.
@@ -43,10 +42,9 @@ registra la versión del motor junto al hash del libro comprobado.
 1. Sustituye todos los resultados guardados de fórmulas por un centinela.
 2. Un perfil que no recalcula los conserva: control negativo de que abrir/guardar no
    basta para validar una hoja de cálculo.
-3. Con OOXMLRecalcMode=0 se sustituyen todos, sin celdas de error. Desvío máximo frente
-   a los valores auténticos: 1,5916157281e-12; precio 98,2691647949938.
+3. Con OOXMLRecalcMode=0 se sustituyen todos, sin celdas de error. El criterio de aceptación exige un desvío máximo inferior a 1e-9. Precio 98,2691647949938.
 4. Con las sigmas a cero y cachés adulteradas, el motor calcula 105,35659626163304 y
-   la tabla de `Resumen` registra 200 autocancelaciones (100 %) en el quinto periodo
+   la tabla de `Paths` registra 200 autocancelaciones (100 %) en el quinto periodo
    y cero en los otros 19. El recuento exige el indicador de autocall de `Paths`.
 5. Al cambiar solo el nominal de 100 a 200, «PV del nominal introducido» pasa de
    98,269164795 a 196,538329590.
@@ -54,8 +52,7 @@ registra la versión del motor junto al hash del libro comprobado.
 
 El [certificado](../outputs/recalculo_validacion.json) se liga al hash del libro:
 [check_delivery.py](../scripts/check_delivery.py) no acepta como vigente un certificado
-de otro XLSX. **Microsoft Excel no probado.** Estas pruebas no convierten las tablas
-estáticas de escenarios en una aplicación general de valoración.
+de otro XLSX. **Microsoft Excel no probado.** Los escenarios adicionales se reproducen desde Python.
 
 ## Auditoría aislada y lecciones conservadas
 
