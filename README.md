@@ -8,8 +8,13 @@ está validado para el ejercicio académico.
 aproximado [92,85545320; 103,68287639]. La precisión está limitada por la muestra y
 las aproximaciones del modelo. [Resultados y lectura económica](docs/RESULTADOS.md).
 
-[Excel con implementación](entrega/Snowblade_LMM.xlsx) ·
-[Memoria PDF](entrega/Memoria_Snowblade.pdf)
+## Entrega y guía de estudio
+
+| Archivo | Contenido |
+| --- | --- |
+| [Excel con implementación](entrega/Snowblade_LMM.xlsx) | Valoración y cálculo completo de las 200 trayectorias. |
+| [Memoria PDF](entrega/Memoria_Snowblade.pdf) | Cinco páginas para presentar la solución al profesor. |
+| [Guía pedagógica PDF](docs/Guia_pedagogica_Snowblade_LMM.pdf) | Material de estudio de once páginas para comprender el modelo y preparar la defensa. |
 
 El Excel abre en **Resumen**. **Ejemplo** permite seguir la trayectoria 1 y comprobar su valor en **Paths**. La memoria desarrolla las mismas cifras en la página 4. El [plan de acción y los criterios de aceptación](docs/PLAN_ENTREGA.md) documentan el diseño y la revisión de la entrega.
 
@@ -60,6 +65,9 @@ El PDF requiere DejaVu en `/usr/share/fonts/truetype/dejavu/`. El recálculo ext
 requiere `soffice` en PATH, o `--soffice /ruta/soffice`; trabaja con copias temporales.
 Los escenarios adicionales se regeneran desde Python y se conservan en `outputs/resultados.json`.
 
+Para regenerar la guía de estudio, ejecutar `python scripts/build_study_guide.py`.
+El script escribe el PDF en `docs/` con los resultados de la misma simulación.
+
 ## Estructura y fuentes
 
 [Enunciado original](data/original/2026_Ejercicio.pdf) ·
@@ -71,7 +79,7 @@ Los escenarios adicionales se regeneran desde Python y se conservan en `outputs/
 - `scripts/`: ejecución, validación, generación y comprobación de las entregas.
 - `outputs/`: resultados finales y evidencia reproducible, incluidos 200 PV y 4.000 flujos.
 - `entrega/`: XLSX sin VBA y memoria docente de cinco páginas.
-- `docs/`: fuentes adicionales, decisiones, método y evidencia; [AGENTS.md](AGENTS.md)
+- `docs/`: guía pedagógica, fuentes adicionales, decisiones, método y evidencia; [AGENTS.md](AGENTS.md)
   contiene las reglas para mantenerlos consistentes.
 
 No modificar los originales ni sustituir aleatorios o PCA. El recálculo se ha probado
