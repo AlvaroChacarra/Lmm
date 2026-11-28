@@ -23,12 +23,12 @@ def excel(data,s,payload,cf):
                       'comments':'Libro nuevo sin VBA; fuentes originales intactas.',
                       'created':datetime(2026,11,14)})
     w.set_calc_mode('auto')
-    hdr=w.add_format({'bg_color':'#143C60','font_color':'white','bold':True,'text_wrap':True,'valign':'vcenter'})
+    hdr=w.add_format({'bg_color':'#072146','font_color':'white','bold':True,'text_wrap':True,'valign':'vcenter'})
     num=w.add_format({'num_format':'0.000000'})
     pct=w.add_format({'num_format':'0.0000%'})
     datefmt=w.add_format({'num_format':'dd/mm/yyyy'})
     money=w.add_format({'num_format':'0.0000'})
-    title=w.add_format({'bold':True,'font_size':16,'font_color':'#143C60'})
+    title=w.add_format({'bold':True,'font_size':16,'font_color':'#072146'})
     text=w.add_format({'text_wrap':True,'valign':'top'})
     order=['Resumen','Ejemplo','Paths','Flujos','Estados','Parametros','Calendario',
            'Covarianza','Curva','Volatilidades','PCA','Aleatorios']
@@ -38,28 +38,31 @@ def excel(data,s,payload,cf):
         sh.set_column(0,len(head)-1,width)
         return sh
     summary=sheet('Resumen',['Snowblade · valoración','Resultado'],28)
+    nav=w.add_format({'font_color':'#004481','underline':1})
     example=sheets['Ejemplo']
-    for sh in (summary, example):
-        sh.set_tab_color('#08796E')
+    for sh in sheets.values():
+        sh.set_tab_color('#CAD7E2')
+    summary.set_tab_color('#004481')
+    example.set_tab_color('#2DCCCD')
     summary.set_column('A:A',33)
     summary.set_column('B:B',18)
     summary.set_column('C:C',13)
     summary.set_column('D:D',4)
-    summary.set_column('E:E',46)
+    summary.set_column('E:E',38)
     summary.freeze_panes(0,0)
-    highlight=w.add_format({'num_format':'0.00','font_size':16,'bold':True,'font_color':'#08796E'})
+    highlight=w.add_format({'num_format':'0.00','font_size':16,'bold':True,'font_color':'#004481'})
     frequency=w.add_format({'num_format':'0.0%'})
     amount=w.add_format({'num_format':'0.00'})
-    input_pct=w.add_format({'font_color':'#18568A','num_format':'0.00%'})
-    params=sheet('Parametros',['Parametro','Valor'],30)
-    for r,entry in enumerate([('Nominal',100.),('Shift',data.shift),('Objetivo efectivo neto',.04),('P(0,T*)',s.initial_terminal),('Paths',200),('Cupones iniciales anualizados',.01),('h difusion 30/360',data.dt_template)],1):params.write_row(r,0,entry)
-    curve=sheet('Curva',['Dias desde origen','Fecha','Descuento'],22)
+    input_pct=w.add_format({'font_color':'#1973B8','num_format':'0.00%'})
+    params=sheet('Parametros',['Parámetro','Valor'],30)
+    for r,entry in enumerate([('Nominal',100.),('Shift',data.shift),('Objetivo efectivo neto',.04),('P(0,T*)',s.initial_terminal),('Paths',200),('Cupones iniciales anualizados',.01),('Paso de difusión (años)',data.dt_template)],1):params.write_row(r,0,entry)
+    curve=sheet('Curva',['Días desde origen','Fecha','Descuento'],22)
     for r,(d,df) in enumerate(zip(data.days,data.discounts),1):
         curve.write_number(r,0,d);curve.write_datetime(r,1,data.start+timedelta(days=int(d)),datefmt);curve.write_number(r,2,df,num)
     volsheet=sheet('Volatilidades',['Periodo original','Sigma original','Uso en malla','Celda fuente'],24)
     for k,vol in enumerate(data.vols):
         volsheet.write_row(k+1,0,[k+1,vol,f'F{k+1}' if k<20 else 'Extra; fuera de malla',f'Curva y volas!F{k+9}'])
-    cal=sheet('Calendario',['i','Fecha','Dias','ACT365','P0','Spot i=0 / Forward i>=1','Sigma','Carga 1','Carga 2','Carga 3','Spread cupón'],19)
+    cal=sheet('Calendario',['i','Fecha','Días','ACT/365','P0','Spot i=0 / Forward i>=1','Sigma','Carga 1','Carga 2','Carga 3','Spread cupón'],19)
     for i in range(22):
         r=i+1;cal.write_number(r,0,i);cal.write_datetime(r,1,s.dates[i],datefmt);cal.write_number(r,2,int(s.days[i]))
         d=int(s.days[i]);k=min(max(np.searchsorted(data.days,d,side='left')-1,0),len(data.days)-2)
@@ -91,11 +94,11 @@ def excel(data,s,payload,cf):
             ri=i+2;rj=j+2
             formula=f'=Calendario!G{ri}*Calendario!G{rj}*SUMPRODUCT(Calendario!H{ri}:J{ri},Calendario!H{rj}:J{rj})'
             cov.write_formula(i+1,j+1,formula,num,covariance[i,j])
-    rnd=sheet('Aleatorios',['Factor','Paso','Path','Z original'],18)
+    rnd=sheet('Aleatorios',['Factor','Paso','Path','Normal original'],18)
     for k in range(3):
         for n in range(20):
             for p in range(200):rnd.write_row(1+k*4000+n*200+p,0,[k+1,n+1,p+1,data.normals[k,n,p]])
-    st=sheet('Estados',['Path','Paso','Fecha','h difusion 30/360','Z1','Z2','Z3']+[f'F{i}' for i in range(21)]+[f'mu{i}' for i in range(21)],15)
+    st=sheet('Estados',['Path','Paso','Fecha','Paso de difusión (años)','Z1','Z2','Z3']+[f'F{i}' for i in range(21)]+[f'mu{i}' for i in range(21)],15)
     for p in range(200):
         for n in range(21):
             r=1+p*21+n;st.write_number(r,0,p+1);st.write_number(r,1,n);st.write_datetime(r,2,s.dates[n],datefmt)
@@ -124,7 +127,7 @@ def excel(data,s,payload,cf):
                     shock=f'Calendario!G{ri}*(Calendario!H{ri}*E{r+1}+Calendario!I{ri}*F{r+1}+Calendario!J{ri}*G{r+1})'
                     form=f'=({cell(previous,fcol)}+Parametros!$B$3)*EXP(({cell(r,mcol)}-0.5*{var})*D{r+1}+SQRT(D{r+1})*{shock})-Parametros!$B$3'
                     st.write_formula(r,fcol,form,num,s.states[n,p,i])
-    flows=sheet('Flujos',['Path','Periodo','Pago','Fixing advance','Tasa anual cupón','ACT365','Vivo antes','Cupón pagado','Acumulado / nominal','Autocall','Principal','P(t,T*)','PV cupon','PV principal','PV total'],20)
+    flows=sheet('Flujos',['Path','Periodo','Pago','Euribor fijado al inicio','Tasa anual cupón','ACT365','Vivo antes','Cupón pagado','Acumulado / nominal','Autocall','Principal','P(t,T*)','PV cupón','PV principal','PV total'],20)
     for p in range(200):
         for j in range(20):
             r=1+p*20+j;rr=r+1
@@ -146,7 +149,7 @@ def excel(data,s,payload,cf):
             flows.write_formula(r,12,f'=H{rr}*Parametros!$B$5/L{rr}',money,cv)
             flows.write_formula(r,13,f'=K{rr}*Parametros!$B$5/L{rr}',money,pr)
             flows.write_formula(r,14,f'=M{rr}+N{rr}',money,cv+pr)
-    paths=sheet('Paths',['Path','PV cupones','PV principal','PV total','Periodo amortizacion','Vida años Q*','Autocall'],23)
+    paths=sheet('Paths',['Path','PV cupones','PV principal','PV total','Semestre de amortización','Vida bajo Q* (años)','Autocall'],23)
     report,_,pv,cp,pp=estimate(s)
     for p in range(200):
         r=p+1;first=p*20+2;last=first+19
@@ -160,38 +163,41 @@ def excel(data,s,payload,cf):
         ('PV cupones','=AVERAGE(Paths!B2:B201)',report['coupon_pv']),
         ('PV principal','=AVERAGE(Paths!C2:C201)',report['principal_pv']),
         ('Error estándar','=STDEV(Paths!D2:D201)/SQRT(COUNT(Paths!D2:D201))',report['standard_error']),
-        ('IC 95% aprox inferior','=B2-TINV(0.05,199)*B5',report['ci95_student'][0]),
-        ('IC 95% aprox superior','=B2+TINV(0.05,199)*B5',report['ci95_student'][1]),
+        ('IC 95% · límite inferior','=B2-TINV(0.05,199)*B5',report['ci95_student'][0]),
+        ('IC 95% · límite superior','=B2+TINV(0.05,199)*B5',report['ci95_student'][1]),
         ('Vida media bajo Q* (años)','=AVERAGE(Paths!F2:F201)',report['expected_life_years_Q_terminal']),
         ('Supervivencia sin autocall Q*','=1-AVERAGE(Paths!G2:G201)',report['maturity_no_call_probability_Q_terminal'])],1):
         summary.write(r,0,label);summary.write_formula(r,1,formula,highlight if r==1 else frequency if r==8 else amount,value)
-    summary.write(11,0,'Autocancelaciones por semestre',hdr)
-    summary.set_row(11,48)
-    summary.write_row(13,0,['Periodo','Probabilidad Q*','Recuento'],hdr)
+    paths.write_row('I1', ['Semestre','Frecuencia de autocancelación Q*','Recuento'], hdr)
+    paths.set_column('I:K',20)
     for period, count in enumerate(report['autocall_counts'], 1):
-        row = 13 + period
+        row = period
         address = row + 1
-        summary.write_number(row, 0, period)
-        summary.write_formula(row, 2,
-                              f'=COUNTIFS(Paths!$E$2:$E$201,A{address},Paths!$G$2:$G$201,1)',
+        paths.write_number(row, 8, period)
+        paths.write_formula(row, 10,
+                              f'=COUNTIFS($E$2:$E$201,I{address},$G$2:$G$201,1)',
                               None, count)
-        summary.write_formula(row, 1, f'=C{address}/COUNT(Paths!$A$2:$A$201)',
+        paths.write_formula(row, 9, f'=K{address}/COUNT($A$2:$A$201)',
                               frequency, count / len(pv))
     summary.set_row(1,26)
-    summary.write('E1','Cómo leer la valoración',hdr)
-    for row, value in [(1,'Precio = media de los 200 valores presentes.'),
-                       (5,'El intervalo refleja el error de muestreo.'),
-                       (8,'Q* es la medida del bono terminal.'),
-                       (11,'Flujos recoge los pagos de cada trayectoria.'),
-                       (14,'Fechas y muestra fijas según la plantilla.')]:
-        summary.write(row,4,value,text)
-        summary.set_row(row,24)
+    summary.merge_range('E1:F1','Lectura del resultado',hdr)
+    summary.merge_range('E2:F2','Media de las 200 trayectorias de la plantilla.',text)
     summary.write('E4','Nominal usado en la valoración')
     summary.write_formula('F4','=Parametros!B2',amount,100)
-    summary.set_column('F:F',11)
-    summary.write('E7','IC del 95% · muestra de 200 trayectorias')
-    summary.write_url('E11',"internal:'Ejemplo'!A1",string='Abrir la trayectoria 1')
-    summary.print_area('A1:F34')
+    summary.set_column('F:F',15)
+    summary.merge_range('E6:F6','El intervalo mide la incertidumbre de la media estimada.',text)
+    summary.set_row(5,30)
+    summary.merge_range('E8:F9','Q* identifica la medida del bono terminal utilizada para valorar los flujos.',text)
+    summary.write_url('E11',"internal:'Ejemplo'!A1",nav,string='Seguir los pagos de la trayectoria 1')
+    summary.write_url('E12',"internal:'Paths'!A1",nav,string='Consultar las 200 valoraciones')
+    summary.write_url('E13',"internal:'Parametros'!A1",nav,string='Ver los supuestos de cálculo')
+    summary.merge_range('A11:C11','Amortización en la muestra',hdr)
+    summary.write('A12','Alcanzan el objetivo')
+    summary.write_formula('B12','=SUM(Paths!G2:G201)',None,sum(report['autocall_counts']))
+    summary.write('A13','Llegan al final sin alcanzarlo')
+    summary.write_formula('B13','=COUNT(Paths!G2:G201)-B12',None,report['maturity_no_call_count'])
+    for row in [2,3,4,6,9,10,11,12]: summary.set_row(row,21)
+    summary.print_area('A1:F13')
     summary.set_paper(9)
     example.set_column('A:A',10)
     example.set_column('B:H',13)
@@ -210,15 +216,17 @@ def excel(data,s,payload,cf):
         for k,(col,fmt,val) in enumerate(zip('BDEFHIKLO',
                                        [None,pct,pct,num,money,pct,money,num,money],values)):
             example.write_formula(4+j,k,f'=Flujos!{col}{j+2}',fmt,val)
+    example.merge_range('A26:G26','Valor de los pagos de esta trayectoria, expresado a la fecha inicial',text)
     example.write('H26','PV total',hdr)
-    example.write_formula('I26','=SUM(I5:I24)',highlight,pv[0])
+    example_total=w.add_format({'num_format':'0.0000','font_size':14,'bold':True,'font_color':'#004481'})
+    example.write_formula('I26','=SUM(I5:I24)',example_total,pv[0])
     example.set_row(25,25)
     example.conditional_format('A5:I24',{'type':'formula','criteria':'=$G5>0',
-                               'format':w.add_format({'bold':True,'bg_color':'#DDEFEA'})})
+                               'format':w.add_format({'bold':True,'bg_color':'#D9F5F4'})})
     example.conditional_format('A5:I24',{'type':'formula','criteria':'=SUM($G$5:$G5)>$G5',
-                               'format':w.add_format({'font_color':'#657783','bg_color':'#F3F6F6'})})
-    example.write_url('A28',"internal:'Flujos'!A2",string='Detalle en Flujos')
-    example.write_url('E28',"internal:'Paths'!D2",string='Contraste en Paths')
+                               'format':w.add_format({'font_color':'#657783','bg_color':'#F4F4F4'})})
+    example.write_url('A28',"internal:'Flujos'!A2",nav,string='Ver flujos')
+    example.write_url('E28',"internal:'Paths'!D2",nav,string='Ver trayectoria en Paths')
     example.freeze_panes(4,1)
     example.print_area('A1:I28')
     for sh, last, cols in [(st,4200,49),(flows,4000,15),(paths,200,7),(rnd,12000,4)]:
@@ -231,6 +239,9 @@ def excel(data,s,payload,cf):
     params.set_column('C:C',55)
     params.write('C6','Dimensión fija de la muestra suministrada')
     params.write('C8','Paso de simulación. El pago usa el ACT/365 de Calendario.')
+    paths.set_column('E:E',26)
+    paths.set_column('A:A',12)
+    example.set_column('B:C',15)
     for sh in w.worksheets():
         sh.hide_gridlines(2);sh.set_landscape();sh.fit_to_pages(1,0);sh.repeat_rows(0)
     for sh in (summary,example):

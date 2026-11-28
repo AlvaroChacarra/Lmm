@@ -11,7 +11,7 @@ las aproximaciones del modelo. [Resultados y lectura económica](docs/RESULTADOS
 [Excel con implementación](entrega/Snowblade_LMM.xlsx) ·
 [Memoria PDF](entrega/Memoria_Snowblade.pdf)
 
-El Excel abre en **Resumen**. **Ejemplo** permite seguir la trayectoria 1 y comprobar su valor en **Paths**. La memoria desarrolla las mismas cifras en la página 5. El [plan de acción y los criterios de aceptación](docs/PLAN_ENTREGA.md) documentan el diseño y la revisión de la entrega.
+El Excel abre en **Resumen**. **Ejemplo** permite seguir la trayectoria 1 y comprobar su valor en **Paths**. La memoria desarrolla las mismas cifras en la página 4. El [plan de acción y los criterios de aceptación](docs/PLAN_ENTREGA.md) documentan el diseño y la revisión de la entrega.
 
 ## Cómo entender y reconstruir la solución
 
@@ -70,7 +70,7 @@ Los escenarios adicionales se regeneran desde Python y se conservan en `outputs/
 - `tests/`: controles cuantitativos y referencia escalar separada.
 - `scripts/`: ejecución, validación, generación y comprobación de las entregas.
 - `outputs/`: resultados finales y evidencia reproducible, incluidos 200 PV y 4.000 flujos.
-- `entrega/`: XLSX sin VBA y memoria docente de siete páginas.
+- `entrega/`: XLSX sin VBA y memoria docente de cinco páginas.
 - `docs/`: fuentes adicionales, decisiones, método y evidencia; [AGENTS.md](AGENTS.md)
   contiene las reglas para mantenerlos consistentes.
 

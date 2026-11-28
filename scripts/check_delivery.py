@@ -23,6 +23,12 @@ np.testing.assert_allclose(example,expected_example,rtol=0,atol=1e-12)
 np.testing.assert_allclose(w['Ejemplo']['I26'].value,pv[0],rtol=0,atol=1e-12)
 np.testing.assert_allclose(w['Resumen']['B2'].value,r['price'],rtol=0,atol=1e-12)
 np.testing.assert_allclose(w['Resumen']['B5'].value,r['standard_error'],rtol=0,atol=1e-12)
+assert w['Resumen']['B12'].value == sum(r['autocall_counts'])
+assert w['Resumen']['B13'].value == r['maturity_no_call_count']
+frequency_rows = list(w['Paths'].iter_rows(min_row=2, max_row=21, min_col=9, max_col=11, values_only=True))
+np.testing.assert_allclose(frequency_rows, [
+    (period, count / len(pv), count) for period, count in enumerate(r['autocall_counts'], 1)
+], rtol=0, atol=1e-12)
 actual=np.array([[c.value for c in row[7:28]] for row in w['Estados'].iter_rows(min_row=2)],float)
 expected=s.states.transpose(1,0,2).reshape(-1,21)
 np.testing.assert_allclose(actual,expected,rtol=0,atol=1e-14)
@@ -41,8 +47,8 @@ for i,row in enumerate(f['Calendario'].iter_rows(min_row=3,max_row=22,min_col=8,
 count=sum(c.data_type=='f' for sh in f for row in sh for c in row)
 f.close()
 pdf=PdfReader(ROOT/'entrega/Memoria_Snowblade.pdf')
-text='\n'.join(p.extract_text() for p in pdf.pages)
-assert len(pdf.pages)==7
+text=' '.join(' '.join(p.extract_text().split()) for p in pdf.pages)
+assert len(pdf.pages)==5
 def spanish(x):return f'{x:.4f}'.replace('.',',')
 assert all(spanish(value) in text for value in [r['price'],r['standard_error'],*r['ci95_student']])
 assert 'h=0,5' in text

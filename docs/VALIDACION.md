@@ -34,7 +34,7 @@ producen las mismas cancelaciones de la muestra; el test del enunciado es de alc
 
 ## Recálculo de las entregas
 
-Se reconcilian 88.200 estados, 4.000 registros de flujos y 200 PV. La comprobación incluye la trayectoria comentada, sus enlaces PCA, Resumen y las cifras del PDF de siete páginas. El conteo de fórmulas y el desvío máximo del recálculo corresponden al archivo exacto identificado en el certificado.
+Se reconcilian 88.200 estados, 4.000 registros de flujos y 200 PV. La comprobación incluye la trayectoria comentada, sus enlaces PCA, Resumen y las cifras del PDF de cinco páginas. El conteo de fórmulas y el desvío máximo del recálculo corresponden al archivo exacto identificado en el certificado.
 
 El script de recálculo trabaja con copias temporales en LibreOffice. El certificado
 registra la versión del motor junto al hash del libro comprobado.
@@ -44,7 +44,7 @@ registra la versión del motor junto al hash del libro comprobado.
    basta para validar una hoja de cálculo.
 3. Con OOXMLRecalcMode=0 se sustituyen todos, sin celdas de error. El criterio de aceptación exige un desvío máximo inferior a 1e-9. Precio 98,2691647949938.
 4. Con las sigmas a cero y cachés adulteradas, el motor calcula 105,35659626163304 y
-   la tabla de `Resumen` registra 200 autocancelaciones (100 %) en el quinto periodo
+   la tabla de `Paths` registra 200 autocancelaciones (100 %) en el quinto periodo
    y cero en los otros 19. El recuento exige el indicador de autocall de `Paths`.
 5. Al cambiar solo el nominal de 100 a 200, «PV del nominal introducido» pasa de
    98,269164795 a 196,538329590.
